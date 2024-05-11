@@ -19,11 +19,8 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    
+},{timestamps});
 
 // Create a model from the schema
 const User = mongoose.model('User', userSchema);

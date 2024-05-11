@@ -66,7 +66,7 @@ class GameManager{
             if (message.type === 'init_game') {
                 if(this.#pendingUser.socket){
                     //start game 
-                    //TODO : have to save the game in database for recovery untill game ivers  
+                    //TODO : have to save the game in database for recovery untill game is in progress  
                     const game = new Game(this.#pendingUser.socket,this.#pendingUser.userId,socket,userId)
                     this.#games.push(game)
                     this.#pendingUser = {socket :null, userId : null}

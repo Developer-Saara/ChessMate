@@ -3,7 +3,7 @@ const http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require("mongoose")
-
+require('dotenv').config()
 
 const GameManager  = require('./game_module/gameManager');
 const authRoutes = require('./routes/autRoutes')
@@ -29,12 +29,20 @@ wss.on('connection', function connection(ws,req) {
   });
 });
 
-// Define your HTTP routes here using Express
+
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-server.listen(5000, () => {
-  console.log('HTTP and WebSocket server running on http://localhost:5000');
-});
+
+
+mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.klwsiwa.mongodb.net/chessgame?&retryWrites=true&w=majority&appName=Cluster0`).then(()=>{
+  console.log("connected to database");
+  server.listen(5000, () => {
+    console.log('HTTP and WebSocket server running on http://localhost:5000');
+  });
+}).catch((err)=>{
+  console.log("Error in connecting database",err);
+})
+
 
