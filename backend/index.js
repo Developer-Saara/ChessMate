@@ -6,7 +6,7 @@ const mongoose = require("mongoose")
 require('dotenv').config()
 
 const GameManager  = require('./game_module/gameManager');
-const authRoutes = require('./routes/autRoutes')
+const authRoutes = require('./user/routes/autRoutes')
 
 
 
