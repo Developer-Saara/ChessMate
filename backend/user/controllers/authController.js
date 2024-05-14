@@ -23,7 +23,7 @@ const sendOTP = (phoneNumber, otp) => {
 };
 
 
- exports.postSignUp = async (req,res,next)=>{
+exports.postSignUp = async (req,res,next)=>{
     const { phoneNumber, username, password } = req.body;
 
     console.log(password,phoneNumber,username);
@@ -37,7 +37,7 @@ const sendOTP = (phoneNumber, otp) => {
     // Generate OTP
     const otp = generateOTP();
 
-    const salt = await bcrypt.genSalt(15)
+    const salt = await bcrypt.genSalt(10)
 
     const hashedPassWord = await bcrypt.hash(password,salt)
 

@@ -83,6 +83,7 @@ class GameManager {
       if (message.type === "init_game") {
         if (this.#pendingUser.socket) {
           //start game
+          // console.log( this.#pendingUser.userId,userId);
           const game = new Game(
             this.#pendingUser.socket,
             this.#pendingUser.userId,

@@ -6,8 +6,8 @@ const mongoose = require("mongoose")
 require('dotenv').config()
 
 const GameManager  = require('./game_module/gameManager');
-const authRoutes = require('./user/routes/autRoutes')
-
+const userAuthRoutes = require('./user/routes/autRoutes')
+const adminAuthRoutes = require("./admin/routes/authRoutes")
 
 
 const app = express();
@@ -15,14 +15,15 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 app.use(bodyParser.json());
-app.use("/user",authRoutes)
+app.use("/user/auth",userAuthRoutes)
+app.use("/admin/auth",adminAuthRoutes)
 
 const gameManager = new GameManager();
 
 wss.on('connection', function connection(ws,req) {
   const userId = new URLSearchParams(req.url.split('?')[1]).get('userId');
   console.log('WebSocket client connected',userId);
-  gameManager.addUsers(ws);
+  gameManager.addUsers(ws,userId);
 
   ws.on('close', function close() {
     console.log('WebSocket client disconnected');

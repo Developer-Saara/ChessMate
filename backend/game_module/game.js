@@ -13,6 +13,7 @@ class Game {
   #moveCount = 0;
 
   constructor(player1, player1Id, player2, player2Id) {
+    // console.log(player1Id,player2Id);
     
     this.player1 = player1;
     this.player2 = player2;
@@ -40,7 +41,8 @@ class Game {
         payload: {
           whiteColor: "white",
         },
-        gameId :this.gameId
+        gameId :this.gameId,
+        userId : this.player1Id
       })
     );
     this.player2.send(
@@ -49,7 +51,8 @@ class Game {
         payload: {
           blackColor: "black",
         },
-        gameId :this.gameId
+        gameId :this.gameId,
+        userId : this.player2Id
       })
     );
   }
