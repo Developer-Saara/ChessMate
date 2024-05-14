@@ -24,7 +24,7 @@ function authenticateToken(req, res, next) {
       }); 
     }
 
-    const vuser = await User.findById(user._id) 
+    const vuser = await User.findById(user.adminId) 
 
     if(vuser){
       req.user = user;
