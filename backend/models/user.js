@@ -15,12 +15,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
-    password: {
-        type: String,
-        required: true
+    otp :{
+        type :Number,
     },
-    
-},{timestamps});
+    otpTimestamp:{
+        type: Date,
+        default : Date.now()
+    },
+
+},{timestamps : true});
 
 // Create a model from the schema
 const User = mongoose.model('User', userSchema);

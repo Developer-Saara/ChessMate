@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 require('dotenv').config()
-const secretKey = process.env.AUTH_SECRETE_KEY; // Replace this with your actual secret key
+const secretKey = process.env.AUTH_SCRETE_KEY; // Replace this with your actual secret key
+
+console.log(secretKey);
 
 function authenticateToken(req, res, next) {
   // Gather the JWT token from the request headers

@@ -7,9 +7,10 @@ const authController = require('../controllers/authController')
 
 
 router.post('/signup',authController.postSignUp)
-router.post("/verifyotp",authController.verifyOtp)
+router.post("/verifyOtp",authController.verifyOtp)
+router.post("/resendOtp",authController.resendOtp)
 
 
 
 
-module.exports = router
+module.exports = router 

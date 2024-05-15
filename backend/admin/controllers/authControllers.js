@@ -37,7 +37,9 @@ exports.adminLogin = async (req, res, next) => {
                 const token = jwt.sign({ adminId }, process.env.AUTH_SCRETE_KEY, { expiresIn: '1h' });
                 return res.status(200).json({
                     msg: "Login successfully",
-                    token
+                    token,
+                    adminId,
+                    name : admin.name
                 });
             } else {
                 return res.status(404).json({

@@ -3,20 +3,26 @@ const http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require("mongoose")
+const cors = require("cors")
 require('dotenv').config()
 
 const GameManager  = require('./game_module/gameManager');
 const userAuthRoutes = require('./user/routes/autRoutes')
 const adminAuthRoutes = require("./admin/routes/authRoutes")
-
+const adminUsersRoutes = require("./admin/routes/userRoutes")
+const adminTournamentRoutes = require("./admin/routes/tournamentRoutes")
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 app.use(bodyParser.json());
+app.use(cors())
+
 app.use("/user/auth",userAuthRoutes)
 app.use("/admin/auth",adminAuthRoutes)
+app.use("/admin/user",adminUsersRoutes)
+app.use("/admin/tournament",adminTournamentRoutes)
 
 const gameManager = new GameManager();
 

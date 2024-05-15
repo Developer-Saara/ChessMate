@@ -1,13 +1,12 @@
 const twilio = require('twilio');
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
+const User = require('../../models/user');
 require('dotenv').config()
+const jwt = require("jsonwebtoken")
 
-/*
-TODO: configure twilio
-const accountSid = 'YOUR_TWILIO_ACCOUNT_SID';
-const authToken = 'YOUR_TWILIO_AUTH_TOKEN';
+const accountSid = process.env.TWILIO_SID;
+const authToken =  process.env.TWILIO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
-*/
 
 const users = {};
 
@@ -18,76 +17,112 @@ const sendOTP = (phoneNumber, otp) => {
     return client.messages.create({
         body: `Your OTP for signup is: ${otp}`,
         to: phoneNumber,
-        from: 'YOUR_TWILIO_PHONE_NUMBER'
+        from: process.env.TWILIO_PHONE_NUMBER
     });
 };
 
 
-exports.postSignUp = async (req,res,next)=>{
-    const { phoneNumber, username, password } = req.body;
-
-    console.log(password,phoneNumber,username);
+exports.postSignUp = async (req, res, next) => {
+    const { phoneNumber, username} = req.body;
 
     try {
         // Check if the phone number is already registered
-    if (users[phoneNumber]) {
-        return res.status(400).json({ message: 'Phone number already registered.' });
-    }
+        const existingUser = await User.findOne({ phoneNumber });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Phone number already registered.' });
+        }
 
-    // Generate OTP
-    const otp = generateOTP();
+        // Generate OTP
+        const otp = generateOTP();
 
-    const salt = await bcrypt.genSalt(10)
+        // Hash the password
+        
 
-    const hashedPassWord = await bcrypt.hash(password,salt)
-
-    // Save the OTP in memory (You should use a database in a real-world scenario)
-    users[phoneNumber] = { otp, timestamp: Date.now(),password:hashedPassWord,username};;
-
-    // Send OTP via SMS
-    sendOTP(phoneNumber, otp)
-        .then(() => {
-            res.json({ message: 'OTP sent successfully.' });
-        })
-        .catch(err => {
-            console.error('Error sending OTP:', err);
-            res.status(500).json({ message: 'Failed to send OTP.' });
+        // Save the user to the database
+        const newUser = new User({
+            phoneNumber,
+            username,
+            otp
         });
+        await newUser.save();
 
+        // Send OTP via SMS
+        await sendOTP(phoneNumber, otp);
+
+        res.json({ message: 'User signed up successfully. OTP sent.' });
     } catch (error) {
-        console.error('Error signup:', error);
-        res.status(500).json({ message: 'Failed to signup.' });
+        console.error('Error signing up:', error);
+        res.status(500).json({ message: 'Failed to sign up.' });
     }
+};
 
-}
 
-exports.verifyOtp = (req,res,next)=>{
+exports.resendOtp = async (req, res, next) => {
+    const { phoneNumber } = req.body;
+
+    try {
+        // Find the user by phone number
+        const user = await User.findOne({ phoneNumber });
+        if (!user) {
+            return res.status(400).json({ message: 'Phone number not registered.' });
+        }
+
+        // Generate a new OTP
+        const otp = generateOTP();
+
+        // Update the OTP and OTP timestamp in the user document
+        user.otp = otp;
+        user.otpTimestamp = Date.now();
+        await user.save();
+
+        // Send the new OTP via SMS
+        await sendOTP(phoneNumber, otp);
+
+        res.json({ message: 'New OTP sent successfully.' });
+    } catch (error) {
+        console.error('Error resending OTP:', error);
+        res.status(500).json({ message: 'Failed to resend OTP.' });
+    }
+};
+
+
+
+exports.verifyOtp = async (req, res, next) => {
     const { phoneNumber, otp } = req.body;
 
-    // Check if OTP exists for the given phone number 
-    if (!users[phoneNumber]) {
-        return res.status(400).json({ message: 'Phone number not registered.' });
-    }
-
-    const { otp: savedOTP, timestamp } = users[phoneNumber];
-
-    // Check if OTP is correct
-    if (savedOTP === otp) {
-        // Check if OTP is expired (more than 5 minutes old)
-        const otpAge = Date.now() - timestamp;
-        const otpValidityPeriod = 5 * 60 * 1000; // 5 minutes in milliseconds
-        if (otpAge <= otpValidityPeriod) {
-            // OTP verification successful and within validity period
-            //TODO : save details in database and delete in memory user with this phonenumber
-            //* WE will get the userid after saving the details of user in database
-            //TODO : const token = jwt.sign({ userId }, process.env.AUTH_SCRETE_KEY, { expiresIn: '1h' });
-            res.json({ message: 'OTP verification successful. Signup complete!' });
-        } else {
-            // OTP expired
-            res.status(400).json({ message: 'OTP expired. Please request a new OTP.' });
+    try {
+        // Find the user by phone number
+        const user = await User.findOne({ phoneNumber });
+        if (!user) {
+            return res.status(400).json({ message: 'Phone number not registered.' });
         }
-    } else {
-        // Invalid OTP
-        res.status(400).json({ message: 'Invalid OTP.' });
+
+        // Check if OTP is correct
+        if (user.otp !== parseInt(otp)) {
+            return res.status(400).json({ message: 'Invalid OTP.' });
+        }
+
+        // Check if OTP is expired
+        const otpAge = Date.now() - user.otpTimestamp;
+        const otpValidityPeriod = 5 * 60 * 1000; // 5 minutes in milliseconds
+        if (otpAge > otpValidityPeriod) {
+            // OTP expired
+            return res.status(400).json({ message: 'OTP expired. Please request a new OTP.' });
+        }
+
+        // OTP verification successful
+        // Delete OTP and OTP timestamp from user document
+        user.otp = undefined;
+        user.otpTimestamp = undefined;
+        await user.save();
+
+        const userId = user._id
+
+        const token = jwt.sign({ userId }, process.env.AUTH_SCRETE_KEY);
+
+        res.json({ message: 'OTP verification successful. Signup complete!' ,token,username : user.username,phNumber:user.phoneNumber });
+    } catch (error) {
+        console.error('Error verifying OTP:', error);
+        res.status(500).json({ message: 'Failed to verify OTP.' });
     }
-}
+};
