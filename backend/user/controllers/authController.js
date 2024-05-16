@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const User = require('../../models/user');
 require('dotenv').config()
 const jwt = require("jsonwebtoken")
+const generateJwt = require("../../utility/jwtGenaerator")
+const sendEmail = require("../../utility/mailSender")
 
 const accountSid = process.env.TWILIO_SID;
 const authToken =  process.env.TWILIO_AUTH_TOKEN;
@@ -35,19 +37,19 @@ exports.postSignUp = async (req, res, next) => {
         // Generate OTP
         const otp = generateOTP();
 
-        // Hash the password
-        
+    
 
         // Save the user to the database
         const newUser = new User({
             phoneNumber,
             username,
-            otp
+            otp : otp.toString(),
+            otpTimestamp : Date.now()
         });
+        await sendOTP(phoneNumber, otp);
         await newUser.save();
 
         // Send OTP via SMS
-        await sendOTP(phoneNumber, otp);
 
         res.json({ message: 'User signed up successfully. OTP sent.' });
     } catch (error) {
@@ -73,10 +75,10 @@ exports.resendOtp = async (req, res, next) => {
         // Update the OTP and OTP timestamp in the user document
         user.otp = otp;
         user.otpTimestamp = Date.now();
+        await sendOTP(phoneNumber, otp);
         await user.save();
 
         // Send the new OTP via SMS
-        await sendOTP(phoneNumber, otp);
 
         res.json({ message: 'New OTP sent successfully.' });
     } catch (error) {
@@ -98,7 +100,7 @@ exports.verifyOtp = async (req, res, next) => {
         }
 
         // Check if OTP is correct
-        if (user.otp !== parseInt(otp)) {
+        if (user.otp !== otp) {
             return res.status(400).json({ message: 'Invalid OTP.' });
         }
 
@@ -126,3 +128,62 @@ exports.verifyOtp = async (req, res, next) => {
         res.status(500).json({ message: 'Failed to verify OTP.' });
     }
 };
+
+
+
+exports.sendVerifyEmail = (req,res,next)=>{
+    const {userId,email} = req.body
+    
+    const token = generateJwt({userId,email},5)
+
+    const verificationLink = `http://localhost/user/auth/verify?token=${token}`;
+    const body = `Click <a href="${verificationLink}">here</a> to verify your email.`
+
+    try {
+        const result = sendEmail(email,"Verify your email",body)
+        if(result){
+           return  res.status(200).json({
+                msg : "Email sent successfully"
+            })
+        }else{
+            return  res.status(500).json({
+                msg : "Something went wrong"
+            })
+        }
+
+    } catch (error) {
+        console.log("log from email sending",error);
+        return  res.status(500).json({
+            msg : "Something went wrong"
+        })
+    }
+}
+
+
+exports.verifyEmail = async (req,res,next)=>{
+    const userDetails = req.user
+    
+    try {
+        const user = await User.findById(userDetails.userId)
+        if (user) {
+            user.email= userDetails.email
+
+            await user.save()
+
+            return res.status(201).json({
+                msg : "Email verified successfully"
+            })
+        }else{
+            return res.status(500).json({
+                msg : "Somthing went wrong"
+            })
+        }
+    
+    } catch (error) {
+        console.log("error in verify email",error);
+        return res.status(500).json({
+            msg : "Somthing went wrong"
+        })
+    }
+
+}

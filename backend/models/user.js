@@ -15,12 +15,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
+    aadharNumber : {
+       number  : {type : Number,default : null},
+       verified : {type : Boolean,default : false}
+    },
+    bankDetails : {
+        acNumber : {type : Number , default : null},
+        ifsc : {type: String , default : null}
+    },
     otp :{
-        type :Number,
+        type :String,
     },
     otpTimestamp:{
         type: Date,
-        default : Date.now()
     },
 
 },{timestamps : true});

@@ -9,8 +9,8 @@ require('dotenv').config()
 const GameManager  = require('./game_module/gameManager');
 const userAuthRoutes = require('./user/routes/autRoutes')
 const adminAuthRoutes = require("./admin/routes/authRoutes")
-const adminUsersRoutes = require("./admin/routes/userRoutes")
-const adminTournamentRoutes = require("./admin/routes/tournamentRoutes")
+const adminRoutes = require("./admin/routes/adminRoutes")
+const userRoutes = require("./user/routes/userRoutes")
 
 const app = express();
 const server = http.createServer(app);
@@ -21,8 +21,9 @@ app.use(cors())
 
 app.use("/user/auth",userAuthRoutes)
 app.use("/admin/auth",adminAuthRoutes)
-app.use("/admin/user",adminUsersRoutes)
-app.use("/admin/tournament",adminTournamentRoutes)
+app.use("/admin",adminRoutes)
+app.use("/user",userRoutes)
+
 
 const gameManager = new GameManager();
 

@@ -3,12 +3,12 @@ const User = require('../models/user');
 require('dotenv').config()
 const secretKey = process.env.AUTH_SCRETE_KEY; // Replace this with your actual secret key
 
-console.log(secretKey);
+// console.log(secretKey);
 
 function authenticateToken(req, res, next) {
   // Gather the JWT token from the request headers
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // const authHeader = req.headers['authorization'];
+  const token = req.headers.authorization;
 
   // If there is no token, return an error
   if (token == null) {
@@ -25,8 +25,8 @@ function authenticateToken(req, res, next) {
         msg : "Unautherised user"
       }); 
     }
-
-    const vuser = await User.findById(user._id) 
+    // console.log(user);
+    const vuser = await User.findById(user.userId) 
 
     if(vuser){
       req.user = user;
