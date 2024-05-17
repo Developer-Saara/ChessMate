@@ -33,3 +33,29 @@ exports.getAllUsers = async (req,res,next)=>{
     }
 
 }
+
+
+exports.getAUser = async (req,res,next)=>{
+    const userId = req.params.userId
+
+    try {
+        const user  = await User.findById(userId) 
+
+        if(user){
+            return res.status(200).json({
+                msg : "success",
+                user
+            })
+        }else{
+            return res.status(404).json({
+                msg : "user not found"
+            })
+        }
+
+    } catch (error) {
+        console.log("error in getting a user",error);
+        res.status(500).json({
+            msg:"Something went wrong"
+        })       
+    }
+}

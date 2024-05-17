@@ -122,7 +122,7 @@ exports.verifyOtp = async (req, res, next) => {
 
         const token = jwt.sign({ userId }, process.env.AUTH_SCRETE_KEY);
 
-        res.json({ message: 'OTP verification successful. Signup complete!' ,token,username : user.username,phNumber:user.phoneNumber });
+        res.json({ message: 'OTP verification successful. Signup complete!' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
     } catch (error) {
         console.error('Error verifying OTP:', error);
         res.status(500).json({ message: 'Failed to verify OTP.' });
