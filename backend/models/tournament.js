@@ -9,7 +9,7 @@ const tournamentSchema = new mongoose.Schema({
         type : Date,
         required:true,
     },
-    satrtDateAndTime : {
+    startDateAndTime : {
         type : Date,
         required : true
     },
@@ -46,6 +46,16 @@ const tournamentSchema = new mongoose.Schema({
     regPlayes : {
         type : [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
         default: []
+    },
+    numberOfLevels:{
+        type:Number,
+        required : true
+    },
+    currentLevel:{
+        type : Number,
+        default: function() {
+            return this.numberOfLevels; 
+        }
     }
 
 });

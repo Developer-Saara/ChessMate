@@ -11,6 +11,7 @@ const userAuthRoutes = require('./user/routes/autRoutes')
 const adminAuthRoutes = require("./admin/routes/authRoutes")
 const adminRoutes = require("./admin/routes/adminRoutes")
 const userRoutes = require("./user/routes/userRoutes")
+const cronJob = require("./crons/startTournament")
 
 const app = express();
 const server = http.createServer(app);
@@ -44,11 +45,14 @@ app.get('/', (req, res) => {
 
 
 
-mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.klwsiwa.mongodb.net/chessgame?&retryWrites=true&w=majority&appName=Cluster0`).then(()=>{
+mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.klwsiwa.mongodb.net/chessgame?&retryWrites=true&w=majority&appName=Cluster0`,{
+  bufferCommands: false
+}).then(()=>{
   console.log("connected to database");
   server.listen(5000, () => {
     console.log('HTTP and WebSocket server running on http://localhost:5000');
   });
+  // cronJob()
 }).catch((err)=>{
   console.log("Error in connecting database",err);
 })
