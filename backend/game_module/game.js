@@ -45,6 +45,7 @@ class Game {
         userId : this.player1Id
       })
     );
+
     this.player2.send(
       JSON.stringify({
         type: "init_game",
@@ -160,6 +161,7 @@ class Game {
         JSON.stringify({
           type: "move",
           move,
+          color:"white"
         })
       );
     } else {
@@ -167,6 +169,7 @@ class Game {
         JSON.stringify({
           type: "move",
           move,
+          color:"black"
         })
       );
     }

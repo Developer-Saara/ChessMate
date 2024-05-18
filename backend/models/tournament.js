@@ -49,10 +49,14 @@ const tournamentSchema = new mongoose.Schema({
     },
     numberOfLevels:{
         type:Number,
+        required : true
     },
     currentLevel:{
         type : Number,
         default:1
+    },
+    eachLevelPrizeMoney : {
+        type : [{Object}]
     }
 
 });
