@@ -2,18 +2,14 @@ const Tournament = require("../../models/tournament");
 
 
 function calculateLevels(totalUsers) {
-    // Maximum number of users per level (e.g., 2 users per match)
-    const usersPerMatch = 2;
-
-    // Calculate the number of levels
-    let levels = 0;
-    let remainingUsers = totalUsers;
-    
-    while (remainingUsers > 0) {
-        remainingUsers = Math.ceil(remainingUsers / usersPerMatch);
-        levels++;
+    // Validate input
+    if (totalUsers <= 0) {
+        throw new Error('Total number of users must be a positive integer');
     }
-    
+
+    // Calculate the number of levels using logarithm
+    const levels = Math.ceil(Math.log2(totalUsers));
+
     return levels;
 }
 
@@ -21,20 +17,25 @@ function calculateLevels(totalUsers) {
 exports.createTournament = async (req,res,next)=>{
     //TODO : status,winner,players these have default values include it in database schema of tournament
     const {regStartDate,regEndDate,type,durationOfEachMatch,numberOfUserAllowed,regFee,prizeMoney,tournamentSatrtDateAndTime} = req.body;
+    console.log(tournamentSatrtDateAndTime);
     
     try {
+        console.log("started creating");
         const tournament = new Tournament({
             regStartDate : new Date(regStartDate),
             regEndDate: new Date(regEndDate),
-            satrtDateAndTime : new Date(tournamentSatrtDateAndTime) ,
+            startDateAndTime : new Date(tournamentSatrtDateAndTime) ,
             durationOfEachMatch,
             type,
             regFee:parseInt(regFee),
             prizeMoney : parseInt(prizeMoney),
             numberOfUserAllowed : parseInt(numberOfUserAllowed),
-            numberOfLevels : calculateLevels(numberOfUserAllowed)
+            numberOfLevels : calculateLevels(numberOfUserAllowed),
+
         })
+        console.log("done till creating");
         await tournament.save()
+        console.log("done savinng");
         return res.status(201).json({
             msg : "Tournament created successfully"
         })
