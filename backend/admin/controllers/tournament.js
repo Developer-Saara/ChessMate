@@ -16,7 +16,7 @@ function calculateLevels(totalUsers) {
 
 exports.createTournament = async (req,res,next)=>{
     //TODO : status,winner,players these have default values include it in database schema of tournament
-    const {regStartDate,regEndDate,type,durationOfEachMatch,numberOfUserAllowed,regFee,prizeMoney,tournamentSatrtDateAndTime} = req.body;
+    const {regStartDate,regEndDate,type,durationOfEachMatch,numberOfUserAllowed,regFee,prizeMoney,tournamentSatrtDateAndTime,eachLevelPrizeMoney} = req.body;
     console.log(tournamentSatrtDateAndTime);
     
     try {
@@ -31,6 +31,7 @@ exports.createTournament = async (req,res,next)=>{
             prizeMoney : parseInt(prizeMoney),
             numberOfUserAllowed : parseInt(numberOfUserAllowed),
             numberOfLevels : calculateLevels(numberOfUserAllowed),
+            eachLevelPrizeMoney : eachLevelPrizeMoney
 
         })
         console.log("done till creating");
