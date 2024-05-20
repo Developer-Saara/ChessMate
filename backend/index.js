@@ -32,7 +32,7 @@ wss.on('connection', function connection(ws,req) {
   const userId = new URLSearchParams(req.url.split('?')[1]).get('userId');
   console.log('WebSocket client connected',userId);
   gameManager.addUsers(ws,userId);
-
+ 
   ws.on('close', function close() {
     console.log('WebSocket client disconnected');
   });

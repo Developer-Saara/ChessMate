@@ -62,7 +62,7 @@ class GameManager {
         game.player2Id = userId;
         game.player2 = socket;
         game.player1Id = game.player1Id;
-        (game.player1Id = game), player1;
+        game.player1Id = game.player1;
         this.#addHandler(socket, userId);
         // this.#addHandler(game,player1,game.player1Id)
       }

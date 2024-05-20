@@ -39,7 +39,7 @@ class Game {
       JSON.stringify({
         type: "init_game",
         payload: {
-          whiteColor: "white",
+          color: "white",
         },
         gameId :this.gameId,
         userId : this.player1Id
@@ -50,7 +50,7 @@ class Game {
       JSON.stringify({
         type: "init_game",
         payload: {
-          blackColor: "black",
+          color: "black",
         },
         gameId :this.gameId,
         userId : this.player2Id
