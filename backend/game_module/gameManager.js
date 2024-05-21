@@ -95,6 +95,9 @@ class GameManager {
         } else {
           this.#pendingUser.socket = socket;
           this.#pendingUser.userId = userId;
+          socket.send(JSON.stringify({
+            type : "pending"
+          }))
         }
       }
 

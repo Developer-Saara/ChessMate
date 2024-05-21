@@ -56,7 +56,7 @@ const tournamentSchema = new mongoose.Schema({
         default:1
     },
     eachLevelPrizeMoney : {
-        type : [{Object}]
+        type : [{ name: String, Prizes: [String] }]
     }
 
 });
