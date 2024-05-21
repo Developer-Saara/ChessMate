@@ -29,6 +29,7 @@ exports.createTournament = async (req,res,next)=>{
             type,
             regFee:parseInt(regFee),
             prizeMoney : parseInt(prizeMoney),
+            
             numberOfUserAllowed : parseInt(numberOfUserAllowed),
             numberOfLevels : calculateLevels(numberOfUserAllowed),
             eachLevelPrizeMoney : eachLevelPrizeMoney
