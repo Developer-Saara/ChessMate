@@ -29,7 +29,7 @@ exports.createTournament = async (req,res,next)=>{
             type,
             regFee:parseInt(regFee),
             prizeMoney : parseInt(prizeMoney),
-            
+
             numberOfUserAllowed : parseInt(numberOfUserAllowed),
             numberOfLevels : calculateLevels(numberOfUserAllowed),
             eachLevelPrizeMoney : eachLevelPrizeMoney
@@ -82,10 +82,11 @@ exports.getAllTournament = async (req,res,next)=>{
 
 
 exports.deleteTornament = async (req,res,next)=>{
-    const tornament_id = req.query
+    const {tournament_id} = req.params
+    console.log(tournament_id);
 
     try {
-        const result = Tournament.findByIdAndDelete(tornament_id)
+        const result = await Tournament.findByIdAndDelete(tournament_id)
         if(result){
             return res.status(204).json({
                 msg  : "tournament deleted successfully"
@@ -107,12 +108,12 @@ exports.deleteTornament = async (req,res,next)=>{
 }
 
 exports.updateTournament = async (req,res,next)=>{
-    const { id } = req.params;
+    const { tournament_id } = req.params;
     const updateData = req.body;
 
   try {
     const updatedTournament = await Tournament.findByIdAndUpdate(
-      id,
+        tournament_id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -122,7 +123,7 @@ exports.updateTournament = async (req,res,next)=>{
     }
 
     res.status(200).json({
-        msg : "tpurnament updated successfully"
+        msg : "tournament updated successfully"
     });
   } catch (error) {
     console.error('Error updating tournament:', error);
