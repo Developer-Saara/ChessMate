@@ -78,3 +78,53 @@ exports.getAllTournament = async (req,res,next)=>{
         })
     }
 }
+
+
+exports.deleteTornament = async (req,res,next)=>{
+    const tornament_id = req.query
+
+    try {
+        const result = Tournament.findByIdAndDelete(tornament_id)
+        if(result){
+            return res.status(204).json({
+                msg  : "tournament deleted successfully"
+            })
+        }
+        else{
+            return res.status(404).json({
+                msg  : "not found"
+            })
+        }
+
+    } catch (error) {
+        console.log("error on deleting tournament",error);
+        return res.status(500).json({
+            msg  : "Something went wrong"
+        })
+    }
+
+}
+
+exports.updateTournament = async (req,res,next)=>{
+    const { id } = req.params;
+    const updateData = req.body;
+
+  try {
+    const updatedTournament = await Tournament.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTournament) {
+      return res.status(404).json({ message: 'Tournament not found' });
+    }
+
+    res.status(200).json({
+        msg : "tpurnament updated successfully"
+    });
+  } catch (error) {
+    console.error('Error updating tournament:', error);
+    res.status(500).json({ message: 'Error updating tournament', error });
+  }
+}
