@@ -115,6 +115,7 @@ class Game {
         this.player1.send(
             JSON.stringify({
               type: "game_over",
+              result:"checkmate",
               payload: {
                 winner: this.#board.turn() === "w" ? "black" : "white",
               },
@@ -123,18 +124,50 @@ class Game {
           this.player2.send(
             JSON.stringify({
               type: "game_over",
+              result:"checkmate",
               payload: {
                 winner: this.#board.turn === "w" ? "black" : "white",
               },
             })
         );
+        const dbGame = await GameOne2One.findById(this.gameId);
+        dbGame.status = "finished"
+        // dbGame.winner = 
+        dbGame.save()
+      return;
     }
 
-    if (this.#board.isGameOver()) {
-        
+    if (this.#board.isThreefoldRepetition() || this.#board.isInsufficientMaterial() || this.#board.isDraw() ) {
+        this.player1.send(
+            JSON.stringify({
+              type: "game_over",
+              result:"draw",
+              payload: {
+                winner: this.#board.turn() === "w" ? "black" : "white",
+              },
+            })
+          );
+          this.player2.send(
+            JSON.stringify({
+              type: "game_over",
+              result:"draw",
+              payload: {
+                winner: this.#board.turn === "w" ? "black" : "white",
+              },
+            })
+        );
+        const dbGame = await GameOne2One.findById(this.gameId);
+        dbGame.status = "finished"
+        // dbGame.winner = 
+        dbGame.save()
+        return;
+    }
+
+    if (this.#board.isStalemate()) {
       this.player1.send(
         JSON.stringify({
           type: "game_over",
+          result:"stalemate",
           payload: {
             winner: this.#board.turn() === "w" ? "black" : "white",
           },
@@ -143,6 +176,7 @@ class Game {
       this.player2.send(
         JSON.stringify({
           type: "game_over",
+          result:"stalemate",
           payload: {
             winner: this.#board.turn === "w" ? "black" : "white",
           },
@@ -155,6 +189,7 @@ class Game {
         dbGame.save()
       return;
     }
+    
 
     if (this.#moveCount % 2 === 0) {
       this.player2.send(
