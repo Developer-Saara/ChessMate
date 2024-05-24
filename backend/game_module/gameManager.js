@@ -1,5 +1,6 @@
 const GameOne2One = require("../models/game");
 const Game = require("./game");
+const redisUtils = require('../utility/redisOperations');
 class GameManager {
   #games;
   #users;
@@ -32,7 +33,7 @@ class GameManager {
           await dbGame.save();
 
 
-          //TODO update to database about status of the game 
+          
           
 
           // Remove the game from the list of active games
@@ -64,6 +65,10 @@ class GameManager {
         game.player1Id = game.player1Id;
         game.player1Id = game.player1;
         this.#addHandler(socket, userId);
+        socket.send(JSON.stringify({
+          moves:game.moves,
+          board: game.board
+        }))
         // this.#addHandler(game,player1,game.player1Id)
       }
     } else {
@@ -77,7 +82,7 @@ class GameManager {
   }
 
   #addHandler(socket, userId) {
-    socket.on("message", (data) => {
+    socket.on("message",async (data) => {
       const message = JSON.parse(data.toString());
       console.log(message);
       if (message.type === "init_game") {
@@ -107,6 +112,20 @@ class GameManager {
         );
         if (game) {
           game.makeMove(socket, message.move);
+        }
+      }
+      if (message.type === "game_over") {
+        const game = this.#games.find(
+          (game) => game.player1 === socket || game.player2 === socket
+        );
+        if (game) {
+          await game.sendGameOverMessage(message.result);
+
+          // Remove the game from Redis
+          await redisUtils.removeGame(game.gameId);
+
+          // Remove the game from the list of active games
+          this.#games = this.#games.filter(g => g.gameId !== game.gameId);
         }
       }
     });

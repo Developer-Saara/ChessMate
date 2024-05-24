@@ -1,4 +1,5 @@
 const { Chess } = require("chess.js");
+const redisUtils = require('../utility/redisOperations'); // Adjust the path as needed
 const GameOne2One = require("../models/game");
 
 class Game {
@@ -13,8 +14,6 @@ class Game {
   #moveCount = 0;
 
   constructor(player1, player1Id, player2, player2Id) {
-    // console.log(player1Id,player2Id);
-    
     this.player1 = player1;
     this.player2 = player2;
     this.player1Id = player1Id;
@@ -22,70 +21,84 @@ class Game {
     this.#board = new Chess();
     this.#moves = [];
     this.#start_time = new Date();
-    this.updateBoardInterval()
-    const newGame = new GameOne2One({
+
+    this.initializeGame();
+  }
+
+  async initializeGame() {
+    try {
+      const newGame = new GameOne2One({
         player1: this.player1Id,
         player2: this.player2Id,
-        status:"ongoing",
+        status: "ongoing",
         board: this.#board,
-        createdAt : this.#start_time
-    })
+        createdAt: this.#start_time
+      });
 
-    newGame.save()
+      const savedGame = await newGame.save();
+      this.gameId = savedGame._id;
 
-    this.gameId = newGame._id
+      // Save initial game state to Redis
+      await redisUtils.saveGameState(this.gameId, {
+        player1: this.player1Id,
+        player2: this.player2Id,
+        status: "ongoing",
+        board: this.#board.fen(),
+        moves: this.#moves,
+        createdAt: this.#start_time
+      });
 
-    this.player1.send(
-      JSON.stringify({
-        type: "init_game",
-        payload: {
-          color: "white",
-        },
-        gameId :this.gameId,
-        userId : this.player1Id
-      })
-    );
+      this.player1.send(
+        JSON.stringify({
+          type: "init_game",
+          payload: {
+            color: "white",
+          },
+          gameId: this.gameId,
+          userId: this.player1Id
+        })
+      );
 
-    this.player2.send(
-      JSON.stringify({
-        type: "init_game",
-        payload: {
-          color: "black",
-        },
-        gameId :this.gameId,
-        userId : this.player2Id
-      })
-    );
+      this.player2.send(
+        JSON.stringify({
+          type: "init_game",
+          payload: {
+            color: "black",
+          },
+          gameId: this.gameId,
+          userId: this.player2Id
+        })
+      );
+
+      this.updateBoardInterval();
+    } catch (error) {
+      console.error("Error initializing game:", error);
+    }
   }
 
   async updateBoardInterval() {
     this.intervalId = setInterval(async () => {
-        try {
-          // Find the game by its ID
-          const game = await GameOne2One.findById(this.gameId);
-          if (!game) {
-            throw new Error("Game not found");
-          }
-    
-          // Check if the game is over
-          if (game.status === "finished" || game.status === "timeout") {
-            // If the game is over, stop the interval
-            clearInterval(this.intervalId);
-            console.log("Board update interval stopped because the game is over");
-            return;
-          }
-    
-          // Update the board state
-          game.board = this.#board;
-    
-          // Save the updated game document to the database
-          await game.save();
-    
-          console.log("Board updated successfully");
-        } catch (error) {
-          console.error("Error updating board:", error);
+      try {
+        const gameState = await redisUtils.getGameState(this.gameId);
+
+        // Check if the game is over
+        if (!gameState || gameState.status === "finished" || gameState.status === "timeout" ) {
+          clearInterval(this.intervalId);
+          console.log("Board update interval stopped because the game is over");
+          return;
         }
-      }, 60000);
+
+        // Update the board state
+        gameState.board = this.#board.fen();
+
+        // Save the updated game state to Redis
+        await redisUtils.saveGameState(this.gameId, gameState);
+
+        console.log("Board updated successfully");
+      } catch (error) {
+        console.error("Error updating board:", error);
+      }
+    }, 60000);
   }
 
   hasExceededTimeLimit() {
@@ -96,107 +109,55 @@ class Game {
   }
 
   async makeMove(socket, move) {
-    //for validation of right player
     if (this.#moveCount % 2 === 0 && socket !== this.player1) {
+      socket.send(JSON.stringify({
+        type: "not_your_turn"
+      }))
       return;
     }
     if (this.#moveCount % 2 === 1 && socket !== this.player2) {
+      socket.send(JSON.stringify({
+        type: "not_your_turn"
+      }))
       return;
     }
     try {
       this.#board.move(move);
       this.#moves.push(move);
+      await redisUtils.saveGameState(this.gameId, {
+        player1: this.player1Id,
+        player2: this.player2Id,
+        status: "ongoing",
+        board: this.#board.fen(),
+        moves: this.#moves,
+        createdAt: this.#start_time
+      });
     } catch (error) {
       console.log(error);
       return;
     }
 
     if (this.#board.isCheckmate()) {
-        this.player1.send(
-            JSON.stringify({
-              type: "game_over",
-              result:"checkmate",
-              payload: {
-                winner: this.#board.turn() === "w" ? "black" : "white",
-              },
-            })
-          );
-          this.player2.send(
-            JSON.stringify({
-              type: "game_over",
-              result:"checkmate",
-              payload: {
-                winner: this.#board.turn === "w" ? "black" : "white",
-              },
-            })
-        );
-        const dbGame = await GameOne2One.findById(this.gameId);
-        dbGame.status = "finished"
-        // dbGame.winner = 
-        dbGame.save()
+      this.sendGameOverMessage('checkmate');
       return;
     }
 
-    if (this.#board.isThreefoldRepetition() || this.#board.isInsufficientMaterial() || this.#board.isDraw() ) {
-        this.player1.send(
-            JSON.stringify({
-              type: "game_over",
-              result:"draw",
-              payload: {
-                winner: this.#board.turn() === "w" ? "black" : "white",
-              },
-            })
-          );
-          this.player2.send(
-            JSON.stringify({
-              type: "game_over",
-              result:"draw",
-              payload: {
-                winner: this.#board.turn === "w" ? "black" : "white",
-              },
-            })
-        );
-        const dbGame = await GameOne2One.findById(this.gameId);
-        dbGame.status = "finished"
-        // dbGame.winner = 
-        dbGame.save()
-        return;
+    if (this.#board.isThreefoldRepetition() || this.#board.isInsufficientMaterial() || this.#board.isDraw()) {
+      this.sendGameOverMessage('draw');
+      return;
     }
 
     if (this.#board.isStalemate()) {
-      this.player1.send(
-        JSON.stringify({
-          type: "game_over",
-          result:"stalemate",
-          payload: {
-            winner: this.#board.turn() === "w" ? "black" : "white",
-          },
-        })
-      );
-      this.player2.send(
-        JSON.stringify({
-          type: "game_over",
-          result:"stalemate",
-          payload: {
-            winner: this.#board.turn === "w" ? "black" : "white",
-          },
-        })
-      );
-
-      const dbGame = await GameOne2One.findById(this.gameId);
-        dbGame.status = "finished"
-        // dbGame.winner = 
-        dbGame.save()
+      this.sendGameOverMessage('stalemate');
       return;
     }
-    
 
     if (this.#moveCount % 2 === 0) {
       this.player2.send(
         JSON.stringify({
           type: "move",
           move,
-          color:"white"
+          color: "white"
         })
       );
     } else {
@@ -204,13 +165,55 @@ class Game {
         JSON.stringify({
           type: "move",
           move,
-          color:"black"
+          color: "black"
         })
       );
     }
+
     console.log(this.#moves);
     this.#moveCount++;
-   
+  }
+
+  async sendGameOverMessage(result) {
+    const winnerColor = this.#board.turn() === "w" ? "black" : "white";
+    const winnerPlayer = this.#board.turn() === "w" ? this.player2Id : this.player1Id;
+
+    this.player1.send(
+      JSON.stringify({
+        type: "game_over",
+        result,
+        payload: {
+          winner: winnerPlayer,
+          winnerColor,
+        },
+      })
+    );
+
+    this.player2.send(
+      JSON.stringify({
+        type: "game_over",
+        result,
+        payload: {
+          winner: winnerPlayer,
+          winnerColor,
+        },
+      })
+    );
+    
+    //TODO : check its ok to not update in redis 
+    // await redisUtils.updateGameStatus(this.gameId, "finished");
+    // await redisUtils.updateGameWinner(this.gameId, winnerPlayer);
+
+    // Update the status in MongoDB
+    const dbGame = await GameOne2One.findById(this.gameId);
+    if (dbGame) {
+      dbGame.status = "finished";
+      dbGame.winner = winnerPlayer;
+      await dbGame.save();
+    }
+
+    // Remove the game from Redis
+    await redisUtils.removeGame(this.gameId);
   }
 }
 
