@@ -1,15 +1,7 @@
 const  mongoose = require("mongoose")
 
 const gameSchema = new mongoose.Schema({
-    // //temp users
-    // player1:{
-    //   type:Number,
-      // required : true
-    // },
-    // player2:{
-    //   type:Number,
-    //   // required : true
-    // },
+   
     winner:{
       type:mongoose.Schema.Types.ObjectId,
       ref:'User'

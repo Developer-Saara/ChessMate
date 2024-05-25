@@ -61,7 +61,7 @@ const tournamentSchema = new mongoose.Schema({
 
 });
 
-const Tournament = mongoose.model("Tornaments",tournamentSchema)
+const Tournament = mongoose.model("Tournaments",tournamentSchema)
 
 
 module.exports = Tournament;

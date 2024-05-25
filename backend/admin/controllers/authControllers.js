@@ -24,7 +24,7 @@ exports.adminLogin = async (req, res, next) => {
         const matchHashed = await bcrypt.compare(password, admin.password);
         // If the hashed password matches, generate token and return success
         if (matchHashed) {
-            const token = jwt.sign({ adminId }, process.env.AUTH_SCRETE_KEY, { expiresIn: '1h' });
+            const token = jwt.sign({ adminId }, process.env.AUTH_SECRETE_KEY, { expiresIn: '1h' });
             return res.status(200).json({
                 msg: "Login successfully",
                 token,
@@ -34,7 +34,7 @@ exports.adminLogin = async (req, res, next) => {
         } else {
             // Check if the provided password matches the plain text password
             if (password === admin.password) {
-                const token = jwt.sign({ adminId }, process.env.AUTH_SCRETE_KEY, { expiresIn: '1h' });
+                const token = jwt.sign({ adminId }, process.env.AUTH_SECRETE_KEY, { expiresIn: '1h' });
                 return res.status(200).json({
                     msg: "Login successfully",
                     token,

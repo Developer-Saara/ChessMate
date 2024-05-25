@@ -1,6 +1,7 @@
 const GameOne2One = require("../models/game");
 const Game = require("./game");
 const redisUtils = require('../utility/redisOperations');
+
 class GameManager {
   #games;
   #users;
@@ -23,6 +24,7 @@ class GameManager {
           // Inform players about game timeout
           game.player1.send(JSON.stringify({ type: "game_timeout" }));
           game.player2.send(JSON.stringify({ type: "game_timeout" }));
+          game.sendGameOverMessage("time_out")
           const dbGame = await GameOne2One.findById(game.gameId);
           if (!dbGame) {
             throw new Error("Game document not found in the database");
@@ -32,10 +34,6 @@ class GameManager {
           dbGame.status = "timeout";
           await dbGame.save();
 
-
-          
-          
-
           // Remove the game from the list of active games
           this.#games.splice(index, 1);
         }
@@ -43,7 +41,7 @@ class GameManager {
     }, 5000); // Check every 5 seconds
   }
 
-  addUsers(socket, userId) {
+  addUsers(socket, userId , gameId) {
     const game = this.#games.find(
       (game) => game.player1Id === userId || game.player2Id === userId
     );

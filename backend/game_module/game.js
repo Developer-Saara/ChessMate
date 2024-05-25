@@ -55,7 +55,8 @@ class Game {
             color: "white",
           },
           gameId: this.gameId,
-          userId: this.player1Id
+          userId: this.player1Id,
+          opponentId : this.player2Id
         })
       );
 
@@ -66,7 +67,8 @@ class Game {
             color: "black",
           },
           gameId: this.gameId,
-          userId: this.player2Id
+          userId: this.player2Id,
+          opponentId : this.player1Id
         })
       );
 
@@ -104,7 +106,7 @@ class Game {
   hasExceededTimeLimit() {
     const currentTime = new Date();
     const elapsedTime = currentTime - this.#start_time;
-    const timeLimit = 10 * 60 * 1000; // 10 minutes in milliseconds TODO: have change dynamically according to game type
+    const timeLimit = 20 * 60 * 1000; // 20 minutes in milliseconds TODO: have change dynamically according to game type
     return elapsedTime > timeLimit;
   }
 

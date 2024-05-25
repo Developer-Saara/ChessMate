@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const User = require('../../models/user');
 require('dotenv').config()
 const jwt = require("jsonwebtoken")
-const generateJwt = require("../../utility/jwtGenaerator")
+const generateJwt = require("../../utility/jwtGenerator")
 const sendEmail = require("../../utility/mailSender")
 
 const accountSid = process.env.TWILIO_SID;
@@ -120,7 +120,7 @@ exports.verifyOtp = async (req, res, next) => {
 
         const userId = user._id
 
-        const token = jwt.sign({ userId }, process.env.AUTH_SCRETE_KEY);
+        const token = jwt.sign({ userId }, process.env.AUTH_SECRETE_KEY);
 
         res.json({ message: 'OTP verification successful. Signup complete!' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
     } catch (error) {
@@ -175,14 +175,14 @@ exports.verifyEmail = async (req,res,next)=>{
             })
         }else{
             return res.status(500).json({
-                msg : "Somthing went wrong"
+                msg : "Something went wrong"
             })
         }
     
     } catch (error) {
         console.log("error in verify email",error);
         return res.status(500).json({
-            msg : "Somthing went wrong"
+            msg : "Something went wrong"
         })
     }
 

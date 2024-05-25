@@ -29,10 +29,14 @@ app.use("/user",userRoutes)
 const gameManager = new GameManager();
 
 wss.on('connection', function connection(ws,req) {
-  const userId = new URLSearchParams(req.url.split('?')[1]).get('userId');
+  const urlParams = new URLSearchParams(req.url.split('?')[1]);
+  const userId = urlParams.get('userId');
+  const gameId = urlParams.get('gameId');
   console.log('WebSocket client connected',userId);
-  gameManager.addUsers(ws,userId);
- 
+
+  console.log('WebSocket client connected', userId);
+  gameManager.addUsers(ws, userId,gameId);
+
   ws.on('close', function close() {
     console.log('WebSocket client disconnected');
   });
