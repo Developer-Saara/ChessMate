@@ -49,7 +49,7 @@ class Game {
       });
 
       const savedGame = await newGame.save();
-      this.gameId = savedGame._id;
+      this.gameId = savedGame._id.toHexString();
 
       // Save initial game state to Redis
       await redisUtils.saveGameState(this.gameId, {
@@ -73,7 +73,10 @@ class Game {
           },
           gameId: this.gameId,
           userId: this.player1Id,
-          opponentId : this.player2Id
+          opponentId : this.player2Id,
+          player1Time: this.player1Time,
+          player2Time : this.player2Time,
+          gameTime : this.gameTime
         })
       );
 
@@ -85,7 +88,10 @@ class Game {
           },
           gameId: this.gameId,
           userId: this.player2Id,
-          opponentId : this.player1Id
+          opponentId : this.player1Id,
+          player1Time: this.player1Time,
+          player2Time : this.player2Time,
+          gameTime : this.gameTime
         })
       );
 

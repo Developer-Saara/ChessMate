@@ -29,7 +29,7 @@ class GameManager {
     }, 5000); // Check every 5 seconds
   }
 
-  addUsers(socket, userId , gameId) {
+  addUsers(socket, userId , gameId=null) {
     const game = this.#games.find(
       (game) => game.gameId === gameId
     );
@@ -82,6 +82,7 @@ class GameManager {
             userId
           );
 
+          // console.log(`Adding game to games array with gameId: ${game}`);
           await game.initializeGame(); // Ensure gameId is set
 
           console.log(`Adding game to games array with gameId: ${game.gameId}`);
@@ -99,9 +100,11 @@ class GameManager {
 
       if (message.type === "move") {
         const gameId = message.gameId
+      
         const game = this.#games.find(
           (game) => game.gameId === gameId
         );
+        // console.log(game);
         if (game) {
           game.makeMove(socket, message.move);
         }
