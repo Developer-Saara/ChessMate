@@ -17,23 +17,11 @@ class GameManager {
   checkGameTimeLimits() {
     setInterval(() => {
       this.#games.forEach(async (game, index) => {
-        if (game.hasExceededTimeLimit()) {
+        if (game.status === "finished") {
           console.log(
             `Game between ${game.player1Id} and ${game.player2Id} has exceeded 10 minutes`
           );
-          // Inform players about game timeout
-          game.player1.send(JSON.stringify({ type: "game_timeout" }));
-          game.player2.send(JSON.stringify({ type: "game_timeout" }));
-          game.sendGameOverMessage("time_out")
-          const dbGame = await GameOne2One.findById(game.gameId);
-          if (!dbGame) {
-            throw new Error("Game document not found in the database");
-          }
-
-          // Update the game status to "timeout" in the database
-          dbGame.status = "timeout";
-          await dbGame.save();
-
+        
           // Remove the game from the list of active games
           this.#games.splice(index, 1);
         }
@@ -43,7 +31,7 @@ class GameManager {
 
   addUsers(socket, userId , gameId) {
     const game = this.#games.find(
-      (game) => game.player1Id === userId || game.player2Id === userId
+      (game) => game.gameId === gameId
     );
     if (game) {
       if (game.player1Id === userId) {
@@ -75,7 +63,7 @@ class GameManager {
     }
   }
 
-  removeUsere(socket) {
+  removeUser(socket) {
     this.#users = this.#users.filter((user) => user != socket);
   }
 
@@ -93,6 +81,11 @@ class GameManager {
             socket,
             userId
           );
+
+          await game.initializeGame(); // Ensure gameId is set
+
+          console.log(`Adding game to games array with gameId: ${game.gameId}`);
+
           this.#games.push(game);
           this.#pendingUser = { socket: null, userId: null };
         } else {
@@ -105,8 +98,9 @@ class GameManager {
       }
 
       if (message.type === "move") {
+        const gameId = message.gameId
         const game = this.#games.find(
-          (game) => game.player1 === socket || game.player2 === socket
+          (game) => game.gameId === gameId
         );
         if (game) {
           game.makeMove(socket, message.move);

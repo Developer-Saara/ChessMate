@@ -11,7 +11,8 @@ const userAuthRoutes = require('./user/routes/autRoutes')
 const adminAuthRoutes = require("./admin/routes/authRoutes")
 const adminRoutes = require("./admin/routes/adminRoutes")
 const userRoutes = require("./user/routes/userRoutes")
-const cronJob = require("./crons/startTournament")
+const cronJob = require("./crons/startTournament");
+const User = require('./models/user');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,14 +29,32 @@ app.use("/user",userRoutes)
 
 const gameManager = new GameManager();
 
-wss.on('connection', function connection(ws,req) {
+wss.on('connection', async function connection(ws,req) {
   const urlParams = new URLSearchParams(req.url.split('?')[1]);
   const userId = urlParams.get('userId');
   const gameId = urlParams.get('gameId');
-  console.log('WebSocket client connected',userId);
+  
+  try {
+    const user = await User.findById(userId);
+    if (user) {
+      gameManager.addUsers(ws, userId, gameId);
+      console.log('WebSocket client connected', userId);
+    } else {
+      ws.send(JSON.stringify({
+        type: "Unauthorized"
+      }));
+      console.log('Unauthorized connection attempt', userId);
+      ws.close(); // Close the WebSocket connection
+    }
+  } catch (error) {
+    console.error('Error finding user:', error);
+    ws.send(JSON.stringify({
+      type: "Error",
+      message: "Internal server error"
+    }));
+    ws.close(); // Close the WebSocket connection on error
+  }
 
-  console.log('WebSocket client connected', userId);
-  gameManager.addUsers(ws, userId,gameId);
 
   ws.on('close', function close() {
     console.log('WebSocket client disconnected');

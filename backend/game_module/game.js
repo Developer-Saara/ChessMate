@@ -11,7 +11,13 @@ class Game {
   #moves;
   #board;
   #start_time;
+  gameTime
+  player1Time
+  player2Time
+  activePlayer
+  lastMoveTime
   #moveCount = 0;
+  
 
   constructor(player1, player1Id, player2, player2Id) {
     this.player1 = player1;
@@ -22,7 +28,14 @@ class Game {
     this.#moves = [];
     this.#start_time = new Date();
 
-    this.initializeGame();
+    this.player1Time = 10 * 60 * 1000; // 10 minutes in milliseconds
+    this.player2Time = 10 * 60 * 1000; // 10 minutes in milliseconds
+    this.gameTime = 20 * 60 * 1000;    // 20 minutes in milliseconds
+
+    this.activePlayer = player1Id; // Assume player 1 starts
+    this.lastMoveTime = Date.now();
+
+    
   }
 
   async initializeGame() {
@@ -40,12 +53,16 @@ class Game {
 
       // Save initial game state to Redis
       await redisUtils.saveGameState(this.gameId, {
+        gameId:this.gameId,
         player1: this.player1Id,
         player2: this.player2Id,
         status: "ongoing",
         board: this.#board.fen(),
         moves: this.#moves,
-        createdAt: this.#start_time
+        createdAt: this.#start_time,
+        gameTime : this.gameTime,
+        player1Time: this.player1Time,
+        player2Time : this.player2Time
       });
 
       this.player1.send(
@@ -72,7 +89,7 @@ class Game {
         })
       );
 
-      this.updateBoardInterval();
+      // this.updateBoardInterval();
     } catch (error) {
       console.error("Error initializing game:", error);
     }
@@ -111,6 +128,11 @@ class Game {
   }
 
   async makeMove(socket, move) {
+
+    const currentTime = Date.now();
+    const timeSpent = currentTime - this.lastMoveTime;
+
+
     if (this.#moveCount % 2 === 0 && socket !== this.player1) {
       socket.send(JSON.stringify({
         type: "not_your_turn"
@@ -123,19 +145,42 @@ class Game {
       }))
       return;
     }
+
+
     try {
       this.#board.move(move);
       this.#moves.push(move);
       await redisUtils.saveGameState(this.gameId, {
+        gameId:this.gameId,
         player1: this.player1Id,
         player2: this.player2Id,
         status: "ongoing",
         board: this.#board.fen(),
         moves: this.#moves,
-        createdAt: this.#start_time
+        createdAt: this.#start_time,
+        gameTime : this.gameTime,
+        player1Time: this.player1Time,
+        player2Time : this.player2Time
       });
     } catch (error) {
       console.log(error);
+      return;
+    }
+
+    if (this.activePlayer === this.player1Id) {
+      this.player1Time -= timeSpent;
+      this.activePlayer = this.player2Id;
+    } else {
+      this.player2Time -= timeSpent;
+      this.activePlayer = this.player1Id;
+    }
+  
+    this.lastMoveTime = currentTime;
+    this.gameTime -= timeSpent;
+  
+    // Check if any timer has run out
+    if (this.player1Time <= 0 || this.player2Time <= 0 || this.gameTime <= 0) {
+      await this.sendGameOverMessage('timeout');
       return;
     }
 
@@ -154,23 +199,18 @@ class Game {
       return;
     }
 
-    if (this.#moveCount % 2 === 0) {
-      this.player2.send(
-        JSON.stringify({
-          type: "move",
-          move,
-          color: "white"
-        })
-      );
-    } else {
-      this.player1.send(
-        JSON.stringify({
-          type: "move",
-          move,
-          color: "black"
-        })
-      );
-    }
+    const opponent = this.activePlayer === this.player2Id ? this.player2 : this.player1;
+    const opponentTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
+  
+    opponent.send(
+      JSON.stringify({
+        type: "move",
+        move,
+        color: this.activePlayer === this.player2Id ? "white" : "black",
+        gameTime: this.gameTime,
+        opponentTime: opponentTime
+      })
+    );
 
     console.log(this.#moves);
     this.#moveCount++;
