@@ -36,7 +36,7 @@ class Game {
       this.player2Time = redisData?.player2Time
       this.gameTime = redisData?.gameTime
       this.moves =redisData?.moves
-      this.activePlayer = player1Id;
+      this.activePlayer = redisData?.activePlayer
       this.lastMoveTime = redisData?.lastMoveTime
     }else{
       this.chess = new Chess()
@@ -87,7 +87,8 @@ class Game {
         gameTime : this.gameTime,
         player1Time: this.player1Time,
         player2Time : this.player2Time,
-        lastMovetime : this.lastMoveTime   
+        lastMovetime : this.lastMoveTime ,
+        activePlayer :this.activePlayer
       });
 
       this.player1.send(
@@ -181,21 +182,7 @@ class Game {
     try {
       this.chess.move(move);
       this.moves.push(move);
-      await redisUtils.saveGameData(this.gameId, {
-        gameId:this.gameId,
-        player1: this.player1Id,
-        player2: this.player2Id,
-        status: "ongoing",
-        board: this.chess.fen(),
-        moves: this.moves,
-        turn : this.chess.turn(),
-        createdAt: this.start_time,
-        gameTime : this.gameTime,
-        player1Time: this.player1Time,
-        player2Time : this.player2Time,
-        activePlayer : this.activePlayer,
-        lastMoveTime:this.lastMoveTime
-      });
+      
     } catch (error) {
       console.log(error);
       return;
@@ -251,6 +238,21 @@ class Game {
     );
 
     this.#moveCount++;
+    await redisUtils.saveGameData(this.gameId, {
+      gameId:this.gameId,
+      player1: this.player1Id,
+      player2: this.player2Id,
+      status: "ongoing",
+      board: this.chess.fen(),
+      moves: this.moves,
+      turn : this.chess.turn(),
+      createdAt: this.start_time,
+      gameTime : this.gameTime,
+      player1Time: this.player1Time,
+      player2Time : this.player2Time,
+      activePlayer : this.activePlayer,
+      lastMoveTime:this.lastMoveTime
+    });
   }
 
   async sendGameOverMessage(result) {
