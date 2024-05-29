@@ -60,6 +60,7 @@ class GameManager {
        this.#games= this.#games.filter((elem)=>elem?.gameId !==gameId)
         const game = new Game(this.#userSockets[gameData.player1],userId,this.#userSockets[gameData.player2],gameData.player2,gameData,gameId)
         this.#games.push(game)
+        await saveGamesList(this.#games)
         // this.#userSockets[userId] = socket;
       }
       else if(gameData && gameData.player2 === userId && this.#userSockets[gameData.player1]){
@@ -76,6 +77,7 @@ class GameManager {
         this.#games= this.#games.filter((elem)=>elem?.gameId !==gameId)
         const game = new Game(this.#userSockets[gameData.player1],gameData?.player1,this.#userSockets[gameData.player2],userId,gameData,gameId)
         this.#games.push(game)
+        await saveGamesList(this.#games)
       }
 
      
@@ -148,12 +150,12 @@ class GameManager {
       }
       if (message.type === "game_over") {
         const gameId = message.gameId
-        const gameData = await getGameData(gameId);
+        const gameData = this.#games.find((g)=> g.gameId == gameId)
         if (gameData) {
-          const game = rehydrateGame(gameData, this.#userSockets);
-          await game.sendGameOverMessage(message.result);
-          await removeGame(game.gameId);
+          await gameData.sendGameOverMessage(message.result);
+          await removeGame(gameData?.gameId);
           this.#games = this.#games.filter(g => g.gameId !== game.gameId);
+          await saveGamesList(this.#games)
         }
       }
     });

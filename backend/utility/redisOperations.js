@@ -66,7 +66,6 @@ const saveGamesList = async (games) => {
   // console.log(games)
   // const {player1Id,player2Id,gameTime,player1Time,player2Time,activePlayer,lastMoveTime,player2,player1}=games;
   try {
-    const {} =games;
     const gamesStr = JSON.stringify(games);
     await redisClient.set(GAMES_KEY, gamesStr);
     // console.log(`Saved games list: ${gamesStr}`);
