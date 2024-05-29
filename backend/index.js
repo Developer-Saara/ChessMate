@@ -13,6 +13,7 @@ const adminRoutes = require("./admin/routes/adminRoutes")
 const userRoutes = require("./user/routes/userRoutes")
 const cronJob = require("./crons/startTournament");
 const User = require('./models/user');
+const Game = require('./models/game');
 
 const app = express();
 const server = http.createServer(app);
@@ -36,10 +37,17 @@ wss.on('connection', async function connection(ws,req) {
   
   try {
     const user = await User.findById(userId);
-    if (user) {
+    const Gamedata = await Game.findById(gameId)
+    if (user && Gamedata) {
       gameManager.addUsers(ws, userId, gameId);
       console.log('WebSocket client connected', userId);
-    } else {
+    } 
+    else if(user){
+      gameManager.addUsers(ws, userId, null);
+      console.log('WebSocket client connected', userId);
+
+    }
+    else {
       ws.send(JSON.stringify({
         type: "Unauthorized"
       }));
@@ -57,6 +65,7 @@ wss.on('connection', async function connection(ws,req) {
 
 
   ws.on('close', function close() {
+    gameManager.removeUser(ws)
     console.log('WebSocket client disconnected');
   });
 });

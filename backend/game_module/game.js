@@ -8,9 +8,10 @@ class Game {
   player2;
   player1Id;
   player2Id;
-  #moves;
-  #board;
-  #start_time;
+  moves;
+  chess
+  board;
+  start_time;
   gameTime
   player1Time
   player2Time
@@ -19,23 +20,45 @@ class Game {
   #moveCount = 0;
   
 
-  constructor(player1, player1Id, player2, player2Id) {
-    this.player1 = player1;
-    this.player2 = player2;
-    this.player1Id = player1Id;
-    this.player2Id = player2Id;
-    this.#board = new Chess();
-    this.#moves = [];
-    this.#start_time = new Date();
-
-    this.player1Time = 10 * 60 * 1000; // 10 minutes in milliseconds
-    this.player2Time = 10 * 60 * 1000; // 10 minutes in milliseconds
-    this.gameTime = 20 * 60 * 1000;    // 20 minutes in milliseconds
-
-    this.activePlayer = player1Id; // Assume player 1 starts
-    this.lastMoveTime = Date.now();
-
+  constructor(player1, player1Id, player2, player2Id, redisData,gameId) {
     
+    if(redisData && gameId ){
+      this.chess = new Chess(redisData?.board)
+      this.board = this.chess.fen()
+      this.gameId = gameId
+      this.player1 = player1;
+      this.player2 = player2;
+      this.player1Id = player1Id;
+      this.player2Id = player2Id;
+      this.#moveCount = redisData?.moves?.length
+      this.start_time = redisData?.createdAt
+      this.player1Time = redisData?.player1Time
+      this.player2Time = redisData?.player2Time
+      this.gameTime = redisData?.gameTime
+      this.moves =redisData?.moves
+      this.activePlayer = player1Id;
+      this.lastMoveTime = redisData?.lastMoveTime
+    }else{
+      this.chess = new Chess()
+      this.board = this.chess.fen()
+      this.player1 = player1;
+      this.player2 = player2;
+      this.player1Id = player1Id;
+      this.player2Id = player2Id;
+      this.moves = [];
+      this.start_time = new Date();
+  
+      this.player1Time = 10 * 60 * 1000; // 10 minutes in milliseconds
+      this.player2Time = 10 * 60 * 1000; // 10 minutes in milliseconds
+      this.gameTime = 20 * 60 * 1000;    // 20 minutes in milliseconds
+  
+      this.activePlayer = player1Id; // Assume player 1 starts
+      this.lastMoveTime = Date.now();
+    }
+
+      
+   
+
   }
 
   async initializeGame() {
@@ -44,25 +67,27 @@ class Game {
         player1: this.player1Id,
         player2: this.player2Id,
         status: "ongoing",
-        board: this.#board,
-        createdAt: this.#start_time
+        board: this.board,
+        createdAt: this.start_time
       });
 
       const savedGame = await newGame.save();
       this.gameId = savedGame._id.toHexString();
 
       // Save initial game state to Redis
-      await redisUtils.saveGameState(this.gameId, {
+      await redisUtils.saveGameData(this.gameId, {
         gameId:this.gameId,
         player1: this.player1Id,
         player2: this.player2Id,
         status: "ongoing",
-        board: this.#board.fen(),
-        moves: this.#moves,
-        createdAt: this.#start_time,
+        board: this.chess.fen(), 
+        moves: this.moves,
+        turn : this.chess.turn(),
+        createdAt: this.start_time, 
         gameTime : this.gameTime,
         player1Time: this.player1Time,
-        player2Time : this.player2Time
+        player2Time : this.player2Time,
+        lastMovetime : this.lastMoveTime   
       });
 
       this.player1.send(
@@ -114,7 +139,7 @@ class Game {
         }
 
         // Update the board state
-        gameState.board = this.#board.fen();
+        gameState.board = this.board.fen();
 
         // Save the updated game state to Redis
         await redisUtils.saveGameState(this.gameId, gameState);
@@ -128,24 +153,24 @@ class Game {
 
   hasExceededTimeLimit() {
     const currentTime = new Date();
-    const elapsedTime = currentTime - this.#start_time;
+    const elapsedTime = currentTime - this.start_time;
     const timeLimit = 20 * 60 * 1000; // 20 minutes in milliseconds TODO: have change dynamically according to game type
     return elapsedTime > timeLimit;
   }
 
   async makeMove(socket, move) {
-
     const currentTime = Date.now();
     const timeSpent = currentTime - this.lastMoveTime;
-
-
-    if (this.#moveCount % 2 === 0 && socket !== this.player1) {
+    
+ 
+    
+    if (this.#moveCount % 2 === 0 &&  socket !== this.player1) {
       socket.send(JSON.stringify({
         type: "not_your_turn"
       }))
       return;
     }
-    if (this.#moveCount % 2 === 1 && socket !== this.player2) {
+    if (this.#moveCount % 2 === 1 &&  socket !== this.player2) {
       socket.send(JSON.stringify({
         type: "not_your_turn"
       }))
@@ -154,19 +179,22 @@ class Game {
 
 
     try {
-      this.#board.move(move);
-      this.#moves.push(move);
-      await redisUtils.saveGameState(this.gameId, {
+      this.chess.move(move);
+      this.moves.push(move);
+      await redisUtils.saveGameData(this.gameId, {
         gameId:this.gameId,
         player1: this.player1Id,
         player2: this.player2Id,
         status: "ongoing",
-        board: this.#board.fen(),
-        moves: this.#moves,
-        createdAt: this.#start_time,
+        board: this.chess.fen(),
+        moves: this.moves,
+        turn : this.chess.turn(),
+        createdAt: this.start_time,
         gameTime : this.gameTime,
         player1Time: this.player1Time,
-        player2Time : this.player2Time
+        player2Time : this.player2Time,
+        activePlayer : this.activePlayer,
+        lastMoveTime:this.lastMoveTime
       });
     } catch (error) {
       console.log(error);
@@ -190,17 +218,17 @@ class Game {
       return;
     }
 
-    if (this.#board.isCheckmate()) {
+    if (this.chess.isCheckmate()) {
       this.sendGameOverMessage('checkmate');
       return;
     }
 
-    if (this.#board.isThreefoldRepetition() || this.#board.isInsufficientMaterial() || this.#board.isDraw()) {
+    if (this.chess.isThreefoldRepetition() || this.chess.isInsufficientMaterial() || this.chess.isDraw()) {
       this.sendGameOverMessage('draw');
       return;
     }
 
-    if (this.#board.isStalemate()) {
+    if (this.chess.isStalemate()) {
       this.sendGameOverMessage('stalemate');
       return;
     }
@@ -208,6 +236,10 @@ class Game {
     const opponent = this.activePlayer === this.player2Id ? this.player2 : this.player1;
     const opponentTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
   
+
+    
+
+
     opponent.send(
       JSON.stringify({
         type: "move",
@@ -218,13 +250,12 @@ class Game {
       })
     );
 
-    console.log(this.#moves);
     this.#moveCount++;
   }
 
   async sendGameOverMessage(result) {
-    const winnerColor = this.#board.turn() === "w" ? "black" : "white";
-    const winnerPlayer = this.#board.turn() === "w" ? this.player2Id : this.player1Id;
+    const winnerColor = this.board.turn() === "w" ? "black" : "white";
+    const winnerPlayer = this.board.turn() === "w" ? this.player2Id : this.player1Id;
 
     this.player1.send(
       JSON.stringify({
@@ -251,7 +282,7 @@ class Game {
     //TODO : check its ok to not update in redis 
     // await redisUtils.updateGameStatus(this.gameId, "finished");
     // await redisUtils.updateGameWinner(this.gameId, winnerPlayer);
-
+5
     // Update the status in MongoDB
     const dbGame = await GameOne2One.findById(this.gameId);
     if (dbGame) {
