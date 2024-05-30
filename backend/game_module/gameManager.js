@@ -130,13 +130,9 @@ class GameManager {
     
     
     else {
-      const existingUser = await getActiveUserById(userId);
-      if (existingUser) {
-        
-        await addActiveUser({existingUser});
-      } else {
+     
         await addActiveUser( {userId });
-      }
+      
       this.#addHandler(socket, userId);
     }
   }
