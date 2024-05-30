@@ -140,7 +140,7 @@ class Game {
         }
 
         // Update the board state
-        gameState.board = this.board.fen();
+        gameState.board = this.chess.fen();
 
         // Save the updated game state to Redis
         await redisUtils.saveGameState(this.gameId, gameState);
@@ -256,8 +256,8 @@ class Game {
   }
 
   async sendGameOverMessage(result) {
-    const winnerColor = this.board.turn() === "w" ? "black" : "white";
-    const winnerPlayer = this.board.turn() === "w" ? this.player2Id : this.player1Id;
+    const winnerColor = this.chess.turn() === "w" ? "black" : "white";
+    const winnerPlayer = this.chess.turn() === "w" ? this.player2Id : this.player1Id;
 
     this.player1.send(
       JSON.stringify({

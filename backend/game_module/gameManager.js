@@ -35,7 +35,7 @@ class GameManager {
   async addUsers(socket, userId, gameId ) {
     // Store the socket with the userId
     if(this.#userSockets.hasOwnProperty(userId)){
-      socket.close()
+      return socket.close()
     }else{
       this.#userSockets[userId] = socket;
     }
