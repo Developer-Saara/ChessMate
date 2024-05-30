@@ -15,7 +15,7 @@ const redisClient = require('../utility/redisClient');
 const rehydrateGame = require("../utility/rehydrateGame")
 
 class GameManager {
-  #games= [];
+  #games=[];
   #userSockets;
   #users;
   #pendingUser;
@@ -40,67 +40,131 @@ class GameManager {
    
     if (gameId) {
       const gameData = await getGameData(gameId);
-      // console.log("apmooooo",this.#userSockets[gameData.player2]===socket,userId)
-
-    
-    
-      console.log(gameData.player1,gameData.player2);   console.log("socketid",this.#userSockets[gameData.player1]===socket,userId)
-   
-      if(gameData && gameData.player1 === userId && this.#userSockets[gameData.player2]){
+      
+      const game = this.#games.find(g => g.gameId === gameId);
+  
+      if (game) {
+        const currentTime = Date.now();
+        const playerTimeRemaining = game.player1Id === userId ? game.player1Time : game.player2Time;
+        const opponentTimeRemaining = game.player1Id === userId ? game.player2Time : game.player1Time;
+        const elapsedTime = currentTime - game.lastMoveTime;
+        // console.log(currentTime,"currentTime")
+        // console.log(playerTimeRemaining,"playerTimeRemaining")
+        // console.log(opponentTimeRemaining,"opponentTimeRemaining")
+        // console.log(elapsedTime,"elapsedTime")
+  
+        // Check if current player's time is over
+        if (playerTimeRemaining - elapsedTime <= 0) {
+          socket.send(JSON.stringify({ type: 'game_over', winner: game.player1Id === userId ? game.player2Id : game.player1Id }));
+          const otherPlayer = game.player1Id == userId ? game.player2 : game?.player1
+          otherPlayer?.send(JSON.stringify({ type: 'game_over', winner: game.player1Id === userId ? game.player2Id : game.player1Id }));
+          this.#games = this.#games.filter(g => g.gameId !== gameId);
+          await updateGameStatus(game.gameId,game.player1Id === userId ? game.player2Id : game.player1Id )
+          await removeGame(gameId);
+          await saveGamesList(this.#games)
+          return;
+        }
+  
+        // Check if opponent's time is over
+        if (opponentTimeRemaining - elapsedTime <= 0) {
+          socket.send(JSON.stringify({ type: 'game_over', winner: userId }));
+          const otherPlayer = game.player1Id == userId ? game.player2 : game?.player1
+          otherPlayer?.send(JSON.stringify({ type: 'game_over', winner: userId }));
+          this.#games = this.#games.filter(g => g.gameId !== gameId);
+          await updateGameStatus(game.gameId,game.player1Id === userId ? game.player2Id : game.player1Id )
+          await removeGame(gameId);
+          await saveGamesList(this.#games)
+          return;
+        }
+  
+        // Update game time for the rejoining user
+        if (game.player1 === userId) {
+          game.player1Time -= elapsedTime;
+        } else {
+          game.player2Time -= elapsedTime;
+        }
+        game.lastMoveTime = currentTime;
+  
+        // Send the game state to the rejoining user
         socket.send(JSON.stringify({
           type: 'resume_game',
-          board: gameData?.board, 
-          moves: gameData?.moves,
-          gameId: gameData?.gameId, 
-          turn : gameData?.turn,
-          userId:userId,
-          opponentId : gameData?.player2
+          board: game.board,
+          moves: game.moves,
+          gameId: game.gameId,
+          turn: game.turn,
+          userId: userId,
+          opponentId: game.player1Id === userId ? game.player2Id : game.player1Id
         }));
-        this.#addHandler(socket,userId)
-       this.#games= this.#games.filter((elem)=>elem?.gameId !==gameId)
-        const game = new Game(this.#userSockets[gameData.player1],userId,this.#userSockets[gameData.player2],gameData.player2,gameData,gameId)
-        this.#games.push(game)
-        await saveGamesList(this.#games)
-        // this.#userSockets[userId] = socket;
-      }
-      else if(gameData && gameData.player2 === userId && this.#userSockets[gameData.player1]){
-        socket.send(JSON.stringify({
-          type: 'resume_game',
-          board: gameData?.board, 
-          moves: gameData?.moves,
-          gameId: gameData?.gameId, 
-          turn : gameData?.turn,
-          userId:userId,
-          opponentId : gameData?.player1
-        }));
-        this.#addHandler(socket,userId)
-        this.#games= this.#games.filter((elem)=>elem?.gameId !==gameId)
-        const game = new Game(this.#userSockets[gameData.player1],gameData?.player1,this.#userSockets[gameData.player2],userId,gameData,gameId)
-        this.#games.push(game)
-        await saveGamesList(this.#games)
+        
+        this.#addHandler(socket, userId);
+        this.#games = this.#games.filter(g => g.gameId !== gameId);
+        const newGame = new Game(
+          this.#userSockets[game.player1Id],
+          game.player1Id,
+          this.#userSockets[game.player2Id],
+          game.player2Id,
+          game,
+          gameId
+        );
+        this.#games.push(newGame);
       }
 
-     
-       else {
+      else {
+        
         socket.send(JSON.stringify({ type: "error", message: "Game not found" }));
       }
-    } else {
+
+
+
+
+
+
+    }
+    
+    
+    
+    
+    
+    
+    else {
       const existingUser = await getActiveUserById(userId);
       if (existingUser) {
-        existingUser.socket = socket;
-        await addActiveUser(existingUser);
+        
+        await addActiveUser({existingUser});
       } else {
-        await addActiveUser({ socketId: socket.id, userId });
+        await addActiveUser( {userId });
       }
       this.#addHandler(socket, userId);
     }
   }
 
   async removeUser(socket) {
-    const userId = socket.userId;
-    delete this.#userSockets[userId];
-    await removeActiveUser(userId);
+    for (const [userId, userSocket] of Object.entries(this.#userSockets)) {
+      if (userSocket === socket) {
+        console.log(`Removing user with userId: ${userId}`);
+        
+        // Delete the user from the #userSockets
+        const game = this.#games?.find((g)=> g?.player1Id === userId || g?.player2Id == userId)
+        if(game){
+          if(game?.player1Id === userId){
+            game?.player2?.send(JSON.stringify({
+              type:"opponent_disconnected"
+            }))
+          }else{
+            game?.player1?.send(JSON.stringify({
+              type:"opponent_disconnected"       
+            }))
+          }
+        }
+        delete this.#userSockets[userId];
+        
+        // Remove the active user from Redis
+        await removeActiveUser(userId);
+        return;
+  
+      }
   }
+}
 
   #addHandler(socket, userId) {
     socket.on("message",async (data) => {
@@ -145,15 +209,16 @@ class GameManager {
         // console.log("from move",gameData?.chess.ascii());
         if (gameData) {
           // const game = rehydrateGame(gameData, this.#userSockets);
-          gameData.makeMove(socket, message.move);
+           gameData.makeMove(socket, message.move);
         }
       }
       if (message.type === "game_over") {
         const gameId = message.gameId
-        const gameData = this.#games.find((g)=> g.gameId == gameId)
+        const gameData = await getGameData(gameId);
         if (gameData) {
-          await gameData.sendGameOverMessage(message.result);
-          await removeGame(gameData?.gameId);
+          const game = rehydrateGame(gameData, this.#userSockets);
+          await game.sendGameOverMessage(message.result);
+          // await removeGame(game.gameId);
           this.#games = this.#games.filter(g => g.gameId !== game.gameId);
           await saveGamesList(this.#games)
         }

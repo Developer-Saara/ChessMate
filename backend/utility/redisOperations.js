@@ -48,10 +48,10 @@ const updateGameWinner = async (gameId, winner) => {
 
 const removeGame = async (gameId) => {
   try {
-    await redisClient.del(gameId.toString());
-    // console.log(`Removed game with gameId: ${gameId}`);
+    await redisClient.hDel('games', gameId.toString());
+    // console.log(`Removed game data for gameId: ${gameId}`);
   } catch (error) {
-    console.error('Error removing game:', error);
+    console.error('Error removing game data:', error);
   }
 };
 
@@ -66,6 +66,7 @@ const saveGamesList = async (games) => {
   // console.log(games)
   // const {player1Id,player2Id,gameTime,player1Time,player2Time,activePlayer,lastMoveTime,player2,player1}=games;
   try {
+    const {} =games;
     const gamesStr = JSON.stringify(games);
     await redisClient.set(GAMES_KEY, gamesStr);
     // console.log(`Saved games list: ${gamesStr}`);
@@ -131,11 +132,13 @@ const addActiveUser = async (user) => {
     console.error('Error adding active user:', error);
   }
 };
-
+ 
 const removeActiveUser = async (userId) => {
   try {
+    console.log(userId);
     let users = await getActiveUsers() || [];
-    users = users.filter(user => user.userId !== userId);
+    users = users.filter((user) => user.userId !== userId);
+    console.log(users);
     await saveActiveUsers(users);
     // console.log(`Removed active user with userId: ${userId}`);
   } catch (error) {
