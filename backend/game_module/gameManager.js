@@ -34,9 +34,12 @@ class GameManager {
   }
   async addUsers(socket, userId, gameId ) {
     // Store the socket with the userId
-    this.#userSockets[userId] = socket;
-    // console.log("uluuuuuuuuuuuuuuuuuuuu",socket);
-    ;
+    if(this.#userSockets.hasOwnProperty(userId)){
+      socket.close()
+    }else{
+      this.#userSockets[userId] = socket;
+    }
+    
    
     if (gameId) {
       const gameData = await getGameData(gameId);
