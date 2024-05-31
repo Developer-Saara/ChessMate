@@ -99,7 +99,7 @@ class GameManager {
           userId: userId,
           opponentId: gameData.player1 === userId ? gameData.player2 : gameData.player1,
           userTime :gameData.player1 === userId ? gameData.player1Time : gameData.player2Time,
-          player2Time:gameData.player1 !== userId ? gameData.player2Time : gameData.player1Time,
+          player2Time: gameData.player1 !== userId ? gameData.player1Time : gameData.player2Time,
           lastMoveTime : gameData.lastMoveTime,
           gameTime : gameData.gameTime
         }));
