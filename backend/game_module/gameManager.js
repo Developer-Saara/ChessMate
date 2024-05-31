@@ -97,9 +97,9 @@ class GameManager {
           gameId: gameData.gameId,
           turn: gameData.turn,
           userId: userId,
-          opponentId: gameData.player1Id === userId ? gameData.player2Id : gameData.player1Id,
-          player1Time :gameData.player1Time,
-          player2Time:gameData.player2Time,
+          opponentId: gameData.player1 === userId ? gameData.player2 : gameData.player1,
+          userTime :gameData.player1 === userId ? gameData.player1Time : gameData.player2Time,
+          player2Time:gameData.player1 !== userId ? gameData.player2Time : gameData.player1Time,
           lastMoveTime : gameData.lastMoveTime,
           gameTime : gameData.gameTime
         }));
