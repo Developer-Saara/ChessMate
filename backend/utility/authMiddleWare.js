@@ -13,7 +13,7 @@ function authenticateToken(req, res, next) {
   // If there is no token, return an error
   if (token == null) {
     return res.status(401).json({
-      msg : "Unautherised user"
+      msg : "Unauthorized user"
     }); // Unauthorized
   }
 
@@ -22,7 +22,7 @@ function authenticateToken(req, res, next) {
     // If there is an error, return an error
     if (err) {
       return res.status(401).json({
-        msg : "Unautherised user"
+        msg : "Unauthorized user"
       }); 
     }
     // console.log(user);
@@ -33,7 +33,7 @@ function authenticateToken(req, res, next) {
       next();
     }else{
       return res.status(401).json({
-        msg : "Unautherised user"
+        msg : "Unauthorized user"
       }); 
     }
 

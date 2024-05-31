@@ -8,6 +8,7 @@ const userAutheticator = require("../../utility/authMiddleWare")
 
 
 router.post('/signup',authController.postSignUp)
+router.post("/login",authController.loginUser)
 router.post("/verifyOtp",authController.verifyOtp)
 router.post("/resendOtp",authController.resendOtp)
 router.post("/sendVerification",userAutheticator,authController.sendVerifyEmail)

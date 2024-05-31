@@ -59,6 +59,31 @@ exports.postSignUp = async (req, res, next) => {
 };
 
 
+exports.loginUser = async (req,res,next)=>{
+    const { phoneNumber} = req.body;
+    try {
+        const user = await User.findOne({ phoneNumber });
+        if (!user) {
+            return res.status(400).json({ message: 'Phone number not registered.' });
+        }
+
+        // Generate a new OTP
+        const otp = generateOTP();
+
+        // Update the OTP and OTP timestamp in the user document
+        user.otp = otp;
+        user.otpTimestamp = Date.now();
+        await sendOTP(phoneNumber, otp);
+        await user.save();
+
+        res.json({ message: 'OTP sent successfully.' });
+    } catch (error) {
+        console.error('Error resending OTP:', error);
+        res.status(500).json({ message: 'Failed to resend OTP.' });
+    }
+}
+
+
 exports.resendOtp = async (req, res, next) => {
     const { phoneNumber } = req.body;
 
@@ -122,7 +147,7 @@ exports.verifyOtp = async (req, res, next) => {
 
         const token = jwt.sign({ userId }, process.env.AUTH_SECRETE_KEY);
 
-        res.json({ message: 'OTP verification successful. Signup complete!' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
+        res.json({ message: 'OTP verification successful' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
     } catch (error) {
         console.error('Error verifying OTP:', error);
         res.status(500).json({ message: 'Failed to verify OTP.' });

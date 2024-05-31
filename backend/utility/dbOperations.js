@@ -1,7 +1,7 @@
 const GameOne2One = require("../models/game")
 
 
-const updateGameStatus = async (gameId,winnerPlayer)=>{
+const updateDbGameStatus = async (gameId,winnerPlayer)=>{
     const dbGame = await GameOne2One.findById(gameId);
     if (dbGame) {
       dbGame.status = "finished";
@@ -13,5 +13,5 @@ const updateGameStatus = async (gameId,winnerPlayer)=>{
 
 
 module.exports = {
-    updateGameStatus
+    updateDbGameStatus
 }

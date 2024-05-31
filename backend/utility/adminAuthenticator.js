@@ -15,7 +15,7 @@ function authenticateToken(req, res, next) {
   if (token == null) {
     // console.log("from null");
     return res.status(401).json({
-      msg : "Unautherised user"
+      msg : "Unauthorized user"
     }); // Unauthorized
   }
 
@@ -25,7 +25,7 @@ function authenticateToken(req, res, next) {
     if (err) {
       // console.log("from error",err);
       return res.status(401).json({
-        msg : "Unautherised user"
+        msg : "Unauthorized user"
       }); 
     }
 
@@ -37,7 +37,7 @@ function authenticateToken(req, res, next) {
     }else{
       // console.log("from user no found");
       return res.status(401).json({
-        msg : "Unautherised user"
+        msg : "Unauthorized user"
       }); 
     }
 
