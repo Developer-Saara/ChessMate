@@ -51,8 +51,10 @@ class GameManager {
         const currentTime = Date.now();
         const playerTimeRemaining = gameData.player1Id === userId ? gameData.player1Time : gameData.player2Time;
         const opponentTimeRemaining = gameData.player1Id === userId ? gameData.player2Time : gameData.player1Time;
-        const elapsedTime = currentTime - gameData.lastMoveTime;
         console.log(currentTime,"currentTime")
+        console.log(gameData.lastMoveTime,"lastMovtime")
+        const elapsedTime = currentTime - gameData.lastMoveTime;
+        
         console.log(playerTimeRemaining,"playerTimeRemaining")
         console.log(opponentTimeRemaining,"opponentTimeRemaining")
         console.log(elapsedTime,"elapsedTime")
@@ -88,7 +90,11 @@ class GameManager {
           game.player2Time = gameData.player2Time - elapsedTime;
         }
         
-  
+        const otherPlayer = gameData.player1Id == userId ? game.player2 : game?.player1
+
+        otherPlayer?.send(JSON.stringify({
+          type:"opponent_rejoined"        
+        }))
         // Send the game state to the rejoining user
         socket.send(JSON.stringify({
           type: 'resume_game',
