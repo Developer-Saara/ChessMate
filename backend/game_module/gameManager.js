@@ -82,12 +82,12 @@ class GameManager {
         }
   
         // Update game time for the rejoining user
-        if (game.player1 === userId) {
-          game.player1Time -= elapsedTime;
+        if (gameData.player1Id === userId) {
+          game.player1Time = gameData.player1Time - elapsedTime;
         } else {
-          game.player2Time -= elapsedTime;
+          game.player2Time = gameData.player2Time - elapsedTime;
         }
-        game.lastMoveTime = currentTime;
+        
   
         // Send the game state to the rejoining user
         socket.send(JSON.stringify({
@@ -107,11 +107,11 @@ class GameManager {
         this.#addHandler(socket, userId);
         this.#games = this.#games.filter(g => g.gameId !== gameId);
         const newGame = new Game(
-          this.#userSockets[game.player1Id],
-          game.player1Id,
-          this.#userSockets[game.player2Id],
-          game.player2Id,
-          game,
+          this.#userSockets[gameData.player1],
+          gameData.player1,
+          this.#userSockets[gameData.player2],
+          gameData.player2,
+          gameData,
           gameId
         );
         this.#games.push(newGame);

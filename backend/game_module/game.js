@@ -251,7 +251,7 @@ class Game {
       player1Time: this.player1Time,
       player2Time : this.player2Time,
       activePlayer : this.activePlayer,
-      lastMoveTime:this.lastMoveTime
+      lastMoveTime:new Date().toISOString()
     });
   }
 
