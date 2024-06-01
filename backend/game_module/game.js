@@ -163,8 +163,11 @@ class Game {
     const currentTime = Date.now();
     const timeSpent = currentTime - this.lastMoveTime;
     
- 
-    
+      console.log("player1time",this.player1Time);
+      console.log("player2time",this.player2Time);
+      console.log("game",this.gameTime);
+      console.log("game",timeSpent);
+      
     if (this.#moveCount % 2 === 0 &&  socket !== this.player1) {
       socket.send(JSON.stringify({
         type: "not_your_turn"
@@ -195,7 +198,7 @@ class Game {
       this.player2Time -= timeSpent;
       this.activePlayer = this.player1Id;
     }
-  
+   
     this.lastMoveTime = currentTime;
     this.gameTime -= timeSpent;
   
@@ -251,7 +254,7 @@ class Game {
       player1Time: this.player1Time,
       player2Time : this.player2Time,
       activePlayer : this.activePlayer,
-      lastMoveTime:new Date().toISOString()
+      lastMoveTime:this.lastMoveTime
     });
   }
 
