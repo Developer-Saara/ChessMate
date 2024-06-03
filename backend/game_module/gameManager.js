@@ -128,17 +128,7 @@ class GameManager {
         socket.send(JSON.stringify({ type: "error", message: "Game not found" }));
       }
 
-
-
-
-
-
     }
-    
-    
-    
-    
-    
     
     else {
      
@@ -155,6 +145,7 @@ class GameManager {
         
         // Delete the user from the #userSockets
         const game = this.#games?.find((g)=> g?.player1Id === userId || g?.player2Id == userId)
+        console.log(game, 'gamedslkijhgiu')
         if(game){
           if(game?.player1Id === userId){
             game?.player2?.send(JSON.stringify({
