@@ -46,7 +46,7 @@ exports.postSignUp = async (req, res, next) => {
             otp : otp.toString(),
             otpTimestamp : Date.now()
         });
-        await sendOTP(phoneNumber, otp);
+        // await sendOTP(phoneNumber, otp);
         await newUser.save();
 
         // Send OTP via SMS
