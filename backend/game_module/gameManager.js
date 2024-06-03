@@ -85,9 +85,9 @@ class GameManager {
   
         // Update game time for the rejoining user
         if (gameData.player1Id === userId) {
-          game.player1Time = gameData.player1Time - elapsedTime;
+          gameData.player1Time = gameData.player1Time - elapsedTime;
         } else {
-          game.player2Time = gameData.player2Time - elapsedTime;
+          gameData.player2Time = gameData.player2Time - elapsedTime;
         }
         
         const otherPlayer = gameData.player1Id == userId ? game.player2 : game?.player1
