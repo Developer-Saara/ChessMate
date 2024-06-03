@@ -225,6 +225,7 @@ class Game {
 
     const opponent = this.activePlayer === this.player2Id ? this.player2 : this.player1;
     const opponentTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
+    const UserTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
   
 
     
@@ -236,7 +237,8 @@ class Game {
         move,
         color: this.activePlayer === this.player2Id ? "white" : "black",
         gameTime: this.gameTime,
-        opponentTime: opponentTime
+        opponentTime: opponentTime,
+        UserTime:UserTime
       })
     );
 
