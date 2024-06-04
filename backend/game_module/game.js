@@ -12,6 +12,7 @@ class Game {
   chess
   board;
   start_time;
+  status
   gameTime
   player1Time
   player2Time
@@ -31,6 +32,7 @@ class Game {
       this.player1Id = player1Id;
       this.player2Id = player2Id;
       this.#moveCount = redisData?.moves?.length
+      this.status = redisData?.status
       this.start_time = redisData?.createdAt
       this.player1Time = redisData?.player1Time
       this.player2Time = redisData?.player2Time
@@ -47,7 +49,7 @@ class Game {
       this.player2Id = player2Id;
       this.moves = [];
       this.start_time = new Date();
-  
+      this.status = "ongoing"
       this.player1Time = 10 * 60 * 1000; // 10 minutes in milliseconds
       this.player2Time = 10 * 60 * 1000; // 10 minutes in milliseconds
       this.gameTime = 20 * 60 * 1000;    // 20 minutes in milliseconds
@@ -238,7 +240,7 @@ class Game {
         color: this.activePlayer === this.player2Id ? "white" : "black",
         gameTime: this.gameTime,
         opponentTime: opponentTime,
-        UserTime:UserTime
+        UserTime:UserTime // on every move
       })
     );
 
@@ -247,7 +249,7 @@ class Game {
       gameId:this.gameId,
       player1: this.player1Id,
       player2: this.player2Id,
-      status: "ongoing",
+      status: this.status,
       board: this.chess.fen(),
       moves: this.moves,
       turn : this.chess.turn(),

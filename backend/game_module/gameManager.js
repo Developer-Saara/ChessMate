@@ -90,9 +90,11 @@ class GameManager {
           gameData.player2Time = gameData.player2Time - elapsedTime;
         }
         
-        const otherPlayer = gameData.player1Id == userId ? game.player2 : game?.player1
+        const otherPlayer = gameData.player1 === userId ? gameData.player2 : gameData?.player1
 
-        otherPlayer?.send(JSON.stringify({
+        console.log("otherplayer", otherPlayer);
+
+        this.#userSockets[otherPlayer].send(JSON.stringify({
           type:"opponent_rejoined"        
         }))
         // Send the game state to the rejoining user
@@ -144,7 +146,7 @@ class GameManager {
         console.log(`Removing user with userId: ${userId}`);
         
         // Delete the user from the #userSockets
-        const game = this.#games?.find((g)=> g?.player1Id === userId || g?.player2Id == userId)
+        const game = this.#games?.find((g)=> (g?.player1Id === userId || g?.player2Id == userId) && g.status === "ongoing")
         console.log(game, 'gamedslkijhgiu')
         if(game){
           if(game?.player1Id === userId){
