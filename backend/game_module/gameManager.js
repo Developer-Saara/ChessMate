@@ -95,7 +95,9 @@ class GameManager {
         console.log("otherplayer", otherPlayer);
 
         this.#userSockets[otherPlayer].send(JSON.stringify({
-          type:"opponent_rejoined"        
+          type:"opponent_rejoined"  ,
+          player2Time :gameData.player1 === userId ? gameData.player1Time : gameData.player2Time,
+          userTime: gameData.player1 !== userId ? gameData.player1Time : gameData.player2Time,      
         }))
         // Send the game state to the rejoining user
         socket.send(JSON.stringify({
@@ -113,6 +115,7 @@ class GameManager {
         }));
         
         this.#addHandler(socket, userId);
+        // removing the old one 
         this.#games = this.#games.filter(g => g.gameId !== gameId);
         const newGame = new Game(
           this.#userSockets[gameData.player1],
