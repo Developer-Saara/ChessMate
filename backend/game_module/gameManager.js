@@ -49,8 +49,8 @@ class GameManager {
   
       if (game) {
         const currentTime = Date.now();
-        const playerTimeRemaining = gameData.player1Id === userId ? gameData.player1Time : gameData.player2Time;
-        const opponentTimeRemaining = gameData.player1Id === userId ? gameData.player2Time : gameData.player1Time;
+        const playerTimeRemaining = gameData.player1 === userId ? gameData.player1Time : gameData.player2Time;
+        const opponentTimeRemaining = gameData.player1 === userId ? gameData.player2Time : gameData.player1Time;
         console.log(currentTime,"currentTime")
         console.log(gameData.lastMoveTime,"lastMovtime")
         const elapsedTime = currentTime - gameData.lastMoveTime;
@@ -61,11 +61,11 @@ class GameManager {
   
         // Check if current player's time is over
         if (playerTimeRemaining - elapsedTime <= 0) {
-          socket.send(JSON.stringify({ type: 'game_over', winner: gameData.player1Id === userId ? gameData.player2Id : gameData.player1Id }));
-          const otherPlayer = gameData.player1Id == userId ? game.player2 : game?.player1
+          socket.send(JSON.stringify({ type: 'game_over', winner: gameData.player1 === userId ? gameData.player2 : gameData.player1 }));
+          const otherPlayer = gameData.player1 == userId ? game.player2 : game?.player1
           otherPlayer?.send(JSON.stringify({ type: 'game_over', winner: game.player1Id === userId ? game.player2Id : game.player1Id }));
           this.#games = this.#games.filter(g => g.gameId !== gameId);
-          await updateDbGameStatus(gameData.gameId,gameData.player1Id === userId ? gameData.player2Id : gameData.player1Id )
+          await updateDbGameStatus(gameData.gameId,gameData.player1 === userId ? gameData.player2 : gameData.player1 )
           await removeGame(gameId);
           await saveGamesList(this.#games)
           return;
@@ -74,17 +74,17 @@ class GameManager {
         // Check if opponent's time is over
         if (opponentTimeRemaining - elapsedTime <= 0) {
           socket.send(JSON.stringify({ type: 'game_over', winner: userId }));
-          const otherPlayer = gameData.player1Id == userId ? game.player2 : game?.player1
+          const otherPlayer = gameData.player1 == userId ? game.player2 : game?.player1
           otherPlayer?.send(JSON.stringify({ type: 'game_over', winner: userId }));
           this.#games = this.#games.filter(g => g.gameId !== gameId);
-          await updateDbGameStatus(gameData.gameId,gameData.player1Id === userId ? gameData.player2Id : gameData.player1Id )
+          await updateDbGameStatus(gameData.gameId,gameData.player1 === userId ? gameData.player2 : gameData.player1 )
           await removeGame(gameId);
           await saveGamesList(this.#games)
           return;
         }
   
         // Update game time for the rejoining user
-        if (gameData.player1Id === userId) {
+        if (gameData.player1 === userId) {
           gameData.player1Time = gameData.player1Time - elapsedTime;
         } else {
           gameData.player2Time = gameData.player2Time - elapsedTime;
