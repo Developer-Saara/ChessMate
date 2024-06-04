@@ -13,6 +13,9 @@ class Game {
   board;
   start_time;
   status
+
+
+
   gameTime
   player1Time
   player2Time
@@ -300,6 +303,8 @@ class Game {
       await dbGame.save();
     }
 
+    this.status = "finished"
+    
     // Remove the game from Redis
     await redisUtils.removeGame(this.gameId);
   }
