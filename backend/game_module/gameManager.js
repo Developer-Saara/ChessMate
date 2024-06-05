@@ -49,11 +49,11 @@ class GameManager {
   
       if (game) {
         const currentTime = Date.now();
-        const playerTimeRemaining = gameData.player1 === userId ? gameData.player1Time : gameData.player2Time;
-        const opponentTimeRemaining = gameData.player1 === userId ? gameData.player2Time : gameData.player1Time;
+        const playerTimeRemaining = gameData.player1 === userId ? game.player1Time : game.player2Time;
+        const opponentTimeRemaining = gameData.player1 === userId ? game.player2Time : game.player1Time;
         console.log(currentTime,"currentTime")
         console.log(gameData.lastMoveTime,"lastMovtime")
-        const elapsedTime = currentTime - gameData.lastMoveTime;
+        const elapsedTime = currentTime - game.lastMoveTime;
         
         console.log(playerTimeRemaining,"playerTimeRemaining")
         console.log(opponentTimeRemaining,"opponentTimeRemaining")
@@ -85,9 +85,9 @@ class GameManager {
   
         // Update game time for the rejoining user
         if (gameData.player1 === userId) {
-          gameData.player1Time = gameData.player1Time - elapsedTime;
+          gameData.player1Time = game.player1Time - elapsedTime;
         } else {
-          gameData.player2Time = gameData.player2Time - elapsedTime;
+          gameData.player2Time = game.player2Time - elapsedTime;
         }
         
         const otherPlayer = gameData.player1 === userId ? gameData.player2 : gameData?.player1
@@ -122,7 +122,7 @@ class GameManager {
           gameData.player1,
           this.#userSockets[gameData.player2],
           gameData.player2,
-          gameData,
+          game,
           gameId
         );
         this.#games.push(newGame);
@@ -209,6 +209,7 @@ class GameManager {
 
       if(message.type === "remove_pending"){
         const user = message.userId
+        console.log("removing pending",user);
         if(user === this.#pendingUser.userId){
           this.#pendingUser = { socket: null, userId: null };
         }
@@ -222,6 +223,7 @@ class GameManager {
         // console.log("from move",gameData?.chess.ascii());
         if (gameData) {
           // const game = rehydrateGame(gameData, this.#userSockets);
+
            gameData.makeMove(socket, message.move);
         }
       }
