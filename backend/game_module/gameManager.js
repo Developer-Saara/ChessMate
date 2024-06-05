@@ -207,6 +207,13 @@ class GameManager {
 
       }
 
+      if(message.type === "remove_pending"){
+        const user = message.userId
+        if(user === this.#pendingUser.userId){
+          this.#pendingUser = { socket: null, userId: null };
+        }
+      }
+
       if (message.type === "move") {
         const gameId = message.gameId
         // console.log("from move userId",userId);
