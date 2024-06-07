@@ -18,7 +18,6 @@ const { updateDbGameStatus } = require("../utility/dbOperations");
 class GameManager {
   #games=[];
   #userSockets;
-  #users;
   #pendingUser;
   constructor() {
     this.#userSockets = {};
@@ -45,19 +44,19 @@ class GameManager {
     if (gameId) {
       const gameData = await getGameData(gameId);
       
-      const game = this.#games.find(g => g?.gameId === gameId);
+      const game = await this.#games.find(g => g?.gameId === gameId);
   
       if (game) {
         const currentTime = Date.now();
         const playerTimeRemaining = gameData?.player1 === userId ? game?.player1Time : game?.player2Time;
         const opponentTimeRemaining = gameData?.player1 === userId ? game?.player2Time : game?.player1Time;
-        console.log(currentTime,"currentTime")
-        console.log(gameData.lastMoveTime,"lastMovtime")
+        // console.log(currentTime,"currentTime")
+        // console.log(gameData.lastMoveTime,"lastMovtime")
         const elapsedTime = currentTime - game?.lastMoveTime;
         
-        console.log(playerTimeRemaining,"playerTimeRemaining")
-        console.log(opponentTimeRemaining,"opponentTimeRemaining")
-        console.log(elapsedTime,"elapsedTime")
+        // console.log(playerTimeRemaining,"playerTimeRemaining")
+        // console.log(opponentTimeRemaining,"opponentTimeRemaining")
+        // console.log(elapsedTime,"elapsedTime")
   
         // Check if current player's time is over
         if (playerTimeRemaining - elapsedTime <= 0) {
@@ -218,7 +217,7 @@ class GameManager {
       if (message.type === "move") {
         const gameId = message?.gameId
         // console.log("from move userId",userId);
-        // console.log("from move",gameId);
+        console.log("from move",gameId);
         const gameData = this.#games.find((g)=> g.gameId == gameId)
         // console.log("from move",gameData?.chess.ascii());
         if (gameData) {

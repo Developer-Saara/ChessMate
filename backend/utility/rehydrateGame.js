@@ -22,6 +22,10 @@ const rehydrateGame = (gameData, userSockets) => {
   game.activePlayer = gameData.activePlayer;
   game.lastMoveTime = gameData.lastMoveTime;
   game.status = gameData?.status;
+  game.player1Points = gameData?.player1Points
+  game.player2Points = gameData?.player2Points
+  game. player2CapturedPieces = gameData?.player2CapturedPieces
+  game. player1CapturedPieces = gameData?. player1CapturedPieces
 
   return game;
 };

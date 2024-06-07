@@ -18,8 +18,20 @@ class Game {
   player2Time
   activePlayer
   lastMoveTime
+  player1Points = 0;// track points 
+  player2Points = 0;
+  player1CapturedPieces = [];// track piece removed 
+  player2CapturedPieces = [];
   #moveCount = 0;
   
+  static pieceValues = {
+    p: 1, // Pawn
+    n: 3, // Knight
+    b: 3, // Bishop
+    r: 5, // Rook
+    q: 9, // Queen
+    k: 0  // King (capturing the king ends the game)
+  };
 
   constructor(player1, player1Id, player2, player2Id, redisData,gameId) {
     
@@ -32,14 +44,18 @@ class Game {
       this.player1Id = player1Id;
       this.player2Id = player2Id;
       this.#moveCount = redisData?.moves?.length
-      this.status = redisData?.status
       this.start_time = redisData?.createdAt
       this.player1Time = redisData?.player1Time
       this.player2Time = redisData?.player2Time
       this.gameTime = redisData?.gameTime
       this.moves =redisData?.moves
-      this.activePlayer = redisData?.activePlayer
+      this.status = redisData?.status
+      this.activePlayer = redisData?.activePlayer;
       this.lastMoveTime = redisData?.lastMoveTime
+      this.player1Points = redisData?.player1Points || 0;
+      this.player2Points = redisData?.player2Points || 0;
+      this.player1CapturedPieces = redisData?.player1CapturedPieces || [];
+      this.player2CapturedPieces = redisData?.player2CapturedPieces || [];
     }else{
       this.chess = new Chess()
       this.board = this.chess.fen()
@@ -50,12 +66,17 @@ class Game {
       this.moves = [];
       this.start_time = new Date();
       this.status = "ongoing"
+  
       this.player1Time = 10 * 60 * 1000; // 10 minutes in milliseconds
       this.player2Time = 10 * 60 * 1000; // 10 minutes in milliseconds
       this.gameTime = 20 * 60 * 1000;    // 20 minutes in milliseconds
   
       this.activePlayer = player1Id; // Assume player 1 starts
       this.lastMoveTime = Date.now();
+      this.player1Points = 0;
+      this.player2Points = 0;
+      this.player1CapturedPieces = [];
+      this.player2CapturedPieces = [];
     }
   }
 
@@ -81,12 +102,16 @@ class Game {
         board: this.chess.fen(), 
         moves: this.moves,
         turn : this.chess.turn(),
+        activePlayer : this.activePlayer,
         createdAt: this.start_time, 
         gameTime : this.gameTime,
         player1Time: this.player1Time,
         player2Time : this.player2Time,
-        lastMovetime : this.lastMoveTime ,
-        activePlayer :this.activePlayer
+        lastMovetime : this.lastMoveTime,
+        player1Points: this.player1Points,
+        player2Points: this.player2Points,
+        player1CapturedPieces: this.player1CapturedPieces,
+        player2CapturedPieces: this.player2CapturedPieces
       });
 
       this.player1.send(
@@ -100,7 +125,11 @@ class Game {
           opponentId : this.player2Id,
           player1Time: this.player1Time,
           player2Time : this.player2Time,
-          gameTime : this.gameTime
+          gameTime : this.gameTime,
+          player1Points: this.player1Points,
+        player2Points: this.player2Points,
+        player1CapturedPieces: this.player1CapturedPieces,
+        player2CapturedPieces: this.player2CapturedPieces
         })
       );
 
@@ -115,7 +144,11 @@ class Game {
           opponentId : this.player1Id,
           player1Time: this.player1Time,
           player2Time : this.player2Time,
-          gameTime : this.gameTime
+          gameTime : this.gameTime,
+          player1Points: this.player1Points,
+        player2Points: this.player2Points,
+        player1CapturedPieces: this.player1CapturedPieces,
+        player2CapturedPieces: this.player2CapturedPieces
         })
       );
 
@@ -181,7 +214,18 @@ class Game {
 
 
     try {
-      this.chess.move(move);
+      const moveResult = this.chess.move(move);
+      if (moveResult.captured) {
+        const capturedValue = Game.pieceValues[moveResult.captured.toLowerCase()];
+        const capturedPiece = { piece: moveResult.captured, color: moveResult.color === 'w' ? 'b' : 'w' };
+        if (this.activePlayer === this.player1Id) {
+          this.player1Points += capturedValue;
+          this.player2CapturedPieces.push(capturedPiece);
+        } else {
+          this.player2Points += capturedValue;
+          this.player1CapturedPieces.push(capturedPiece);
+        }
+      }
       this.moves.push(move);
       
     } catch (error) {
@@ -222,11 +266,17 @@ class Game {
     }
 
     const opponent = this.activePlayer === this.player2Id ? this.player2 : this.player1;
+    const activePlayer = this.activePlayer === this.player2Id ? this.player1 : this.player2
     const opponentTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
-    const UserTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
   
 
-    
+    activePlayer.send(JSON.stringify({
+      type:"update_score",
+      player1Points:this.player1Points,
+      player2Points:this.player2Points,
+      player1CapturedPieces: this.player1CapturedPieces,
+      player2CapturedPieces: this.player2CapturedPieces
+    }))
 
 
     opponent.send(
@@ -236,7 +286,10 @@ class Game {
         color: this.activePlayer === this.player2Id ? "white" : "black",
         gameTime: this.gameTime,
         opponentTime: opponentTime,
-        UserTime:UserTime // on every move
+        player1Points: this.player1Points,
+        player2Points: this.player2Points,
+        player1CapturedPieces: this.player1CapturedPieces,
+        player2CapturedPieces: this.player2CapturedPieces
       })
     );
 
@@ -245,7 +298,7 @@ class Game {
       gameId:this.gameId,
       player1: this.player1Id,
       player2: this.player2Id,
-      status: this.status,
+      status: "ongoing",
       board: this.chess.fen(),
       moves: this.moves,
       turn : this.chess.turn(),
@@ -254,13 +307,29 @@ class Game {
       player1Time: this.player1Time,
       player2Time : this.player2Time,
       activePlayer : this.activePlayer,
-      lastMoveTime:this.lastMoveTime
+      lastMoveTime:this.lastMoveTime,
+      player1Points: this.player1Points,
+      player2Points: this.player2Points,
+      player1CapturedPieces: this.player1CapturedPieces,
+      player2CapturedPieces: this.player2CapturedPieces
     });
   }
 
   async sendGameOverMessage(result) {
     const winnerColor = this.chess.turn() === "w" ? "black" : "white";
     const winnerPlayer = this.chess.turn() === "w" ? this.player2Id : this.player1Id;
+
+    if (result === 'draw') {
+      // Determine winner by points in case of a draw
+      if (this.player1Points > this.player2Points) {
+        winnerPlayer = this.player1Id;
+      } else if (this.player2Points > this.player1Points) {
+        winnerPlayer = this.player2Id;
+      } else {
+        // If points are equal, it's a tie
+        winnerPlayer = null;
+      }
+    }
 
     this.player1.send(
       JSON.stringify({
@@ -269,7 +338,9 @@ class Game {
         payload: {
           winner: winnerPlayer,
           winnerColor,
-        },
+          player1Points: this.player1Points,
+          player2Points: this.player2Points
+        }
       })
     );
 
@@ -280,10 +351,11 @@ class Game {
         payload: {
           winner: winnerPlayer,
           winnerColor,
-        },
+          player1Points: this.player1Points,
+          player2Points: this.player2Points
+        }
       })
     );
-    
     //TODO : check its ok to not update in redis 
     // await redisUtils.updateGameStatus(this.gameId, "finished");
     // await redisUtils.updateGameWinner(this.gameId, winnerPlayer);
