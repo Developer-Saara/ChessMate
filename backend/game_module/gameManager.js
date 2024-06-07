@@ -110,8 +110,12 @@ class GameManager {
           userTime :gameData?.player1 === userId ? gameData?.player1Time : gameData?.player2Time,
           player2Time: gameData?.player1 !== userId ? gameData?.player1Time : gameData?.player2Time,
           lastMoveTime : gameData?.lastMoveTime,
-          gameTime : gameData?.gameTime
-        }));
+          gameTime : gameData?.gameTime,
+          player1Points : gameData?.player1Points,
+          player2Points : gameData?.player2Points,
+          player1CapturedPieces :gameData?.player1CapturedPieces ,
+          player2CapturedPieces : gameData?.player2CapturedPieces 
+          }));
         
         this.#addHandler(socket, userId);
         // removing the old one 
