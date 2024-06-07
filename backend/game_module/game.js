@@ -13,9 +13,6 @@ class Game {
   board;
   start_time;
   status
-
-
-
   gameTime
   player1Time
   player2Time
@@ -60,10 +57,6 @@ class Game {
       this.activePlayer = player1Id; // Assume player 1 starts
       this.lastMoveTime = Date.now();
     }
-
-      
-   
-
   }
 
   async initializeGame() {
@@ -138,7 +131,7 @@ class Game {
         const gameState = await redisUtils.getGameState(this.gameId);
 
         // Check if the game is over
-        if (!gameState || gameState.status === "finished" || gameState.status === "timeout" ) {
+        if (!gameState || gameState?.status === "finished" || gameState?.status === "timeout" ) {
           clearInterval(this.intervalId);
           console.log("Board update interval stopped because the game is over");
           return;
