@@ -270,14 +270,7 @@ class Game {
     const opponentTime = this.activePlayer === this.player2Id ? this.player2Time : this.player1Time;
   
 
-    activePlayer.send(JSON.stringify({
-      type:"update_score",
-      player1Points:this.player1Points,
-      player2Points:this.player2Points,
-      player1CapturedPieces: this.player1CapturedPieces,
-      player2CapturedPieces: this.player2CapturedPieces
-    }))
-
+   
 
     opponent.send(
       JSON.stringify({
@@ -292,6 +285,15 @@ class Game {
         player2CapturedPieces: this.player2CapturedPieces
       })
     );
+
+    activePlayer.send(JSON.stringify({
+      type:"update_score",
+      player1Points:this.player1Points,
+      player2Points:this.player2Points,
+      player1CapturedPieces: this.player1CapturedPieces,
+      player2CapturedPieces: this.player2CapturedPieces
+    }))
+
 
     this.#moveCount++;
     await redisUtils.saveGameData(this.gameId, {

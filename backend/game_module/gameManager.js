@@ -234,7 +234,6 @@ class GameManager {
         const gameId = message?.gameId
         const gameData = this.#games.find((g)=> g.gameId == gameId)
         if (gameData) {
-          
           await gameData?.sendGameOverMessage(message?.result);
           // await removeGame(game.gameId);
           this.#games = this.#games.filter(g => g.gameId !== gameId);
