@@ -13,6 +13,8 @@ router.post("/verifyOtp",authController.verifyOtp)
 router.post("/resendOtp",authController.resendOtp)
 router.post("/sendVerification",userAutheticator,authController.sendVerifyEmail)
 router.get("/verify-email",userAutheticator,authController.verifyEmail)
+router.post("/verify-aadhar",authController.verifyAadhar)
+router.post("/verify-aadhar-otp",authController.verifyAadharOtp)
 
 
 
