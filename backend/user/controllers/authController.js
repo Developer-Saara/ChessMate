@@ -31,7 +31,7 @@ exports.postSignUp = async (req, res, next) => {
         // Check if the phone number is already registered
         const existingUser = await User.findOne({ phoneNumber });
         if (existingUser) {
-            return res.status(400).json({ message: 'Phone number already registered.' });
+            return res.status(403).json({ message: 'Phone number already registered.' });
         }
 
         // Generate OTP
@@ -51,7 +51,7 @@ exports.postSignUp = async (req, res, next) => {
 
         // Send OTP via SMS
 
-        res.json({ message: 'User signed up successfully. OTP sent.' });
+        res.status(200).json({ message: 'User signed up successfully. OTP sent.' });
     } catch (error) {
         console.error('Error signing up:', error);
         res.status(500).json({ message: 'Failed to sign up.' });
@@ -64,7 +64,7 @@ exports.loginUser = async (req,res,next)=>{
     try {
         const user = await User.findOne({ phoneNumber });
         if (!user) {
-            return res.status(400).json({ message: 'Phone number not registered.' });
+            return res.status(403).json({ message: 'Phone number not registered.' });
         }
 
         // Generate a new OTP
@@ -76,7 +76,7 @@ exports.loginUser = async (req,res,next)=>{
         await sendOTP(phoneNumber, otp);
         await user.save();
 
-        res.json({ message: 'OTP sent successfully.' });
+        res.status(200).json({ message: 'OTP sent successfully.' });
     } catch (error) {
         console.error('Error resending OTP:', error);
         res.status(500).json({ message: 'Failed to resend OTP.' });
@@ -105,7 +105,7 @@ exports.resendOtp = async (req, res, next) => {
 
         // Send the new OTP via SMS
 
-        res.json({ message: 'New OTP sent successfully.' });
+        res.status(200).json({ message: 'New OTP sent successfully.' });
     } catch (error) {
         console.error('Error resending OTP:', error);
         res.status(500).json({ message: 'Failed to resend OTP.' });
@@ -121,12 +121,12 @@ exports.verifyOtp = async (req, res, next) => {
         // Find the user by phone number
         const user = await User.findOne({ phoneNumber });
         if (!user) {
-            return res.status(400).json({ message: 'Phone number not registered.' });
+            return res.status(404).json({ message: 'Phone number not registered.' });
         }
 
         // Check if OTP is correct
         if (user.otp !== otp) {
-            return res.status(400).json({ message: 'Invalid OTP.' });
+            return res.status(403).json({ message: 'Invalid OTP.' });
         }
 
         // Check if OTP is expired
@@ -134,7 +134,7 @@ exports.verifyOtp = async (req, res, next) => {
         const otpValidityPeriod = 5 * 60 * 1000; // 5 minutes in milliseconds
         if (otpAge > otpValidityPeriod) {
             // OTP expired
-            return res.status(400).json({ message: 'OTP expired. Please request a new OTP.' });
+            return res.status(403).json({ message: 'OTP expired. Please request a new OTP.' });
         }
 
         // OTP verification successful
@@ -147,7 +147,7 @@ exports.verifyOtp = async (req, res, next) => {
 
         const token = jwt.sign({ userId }, process.env.AUTH_SECRETE_KEY);
 
-        res.json({ message: 'OTP verification successful' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
+        res.status(200).json({ message: 'OTP verification successful' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
     } catch (error) {
         console.error('Error verifying OTP:', error);
         res.status(500).json({ message: 'Failed to verify OTP.' });
