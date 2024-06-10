@@ -5,7 +5,8 @@ require('dotenv').config()
 const jwt = require("jsonwebtoken")
 const generateJwt = require("../../utility/jwtGenerator")
 const sendEmail = require("../../utility/mailSender")
-const axios = require("axios")
+const axios = require("axios");
+const { HandleError, HandleSuccess } = require('../../utility/responseHnalder');
 
 const accountSid = process.env.TWILIO_SID;
 const authToken =  process.env.TWILIO_AUTH_TOKEN;
@@ -46,7 +47,8 @@ exports.postSignUp = async (req, res, next) => {
         // Check if the phone number is already registered
         const existingUser = await User.findOne({ phoneNumber });
         if (existingUser) {
-            return res.status(403).json({ message: 'Phone number already registered.' });
+            return HandleError(res,403,'Phone number already registered.' )
+            // return res.status(403).json({ message: });
         }
 
         // Generate OTP
@@ -65,11 +67,12 @@ exports.postSignUp = async (req, res, next) => {
         await newUser.save();
 
         // Send OTP via SMS
-
-        res.status(200).json({ message: 'User signed up successfully. OTP sent.' });
+        return   HandleSuccess(res,200,'User signed up successfully. OTP sent.',null)
+        // res.status(200).json({ message:  });
     } catch (error) {
         console.error('Error signing up:', error);
-        res.status(500).json({ message: 'Failed to sign up.' });
+        return HandleError(res,500,"Failed to sign up.")
+        // res.status(500).json({ message: 'Failed to sign up.' });
     }
 };
 
@@ -79,7 +82,8 @@ exports.loginUser = async (req,res,next)=>{
     try {
         const user = await User.findOne({ phoneNumber });
         if (!user) {
-            return res.status(403).json({ message: 'Phone number not registered.' });
+            return HandleError(res,403,"Phone number not registered.")
+            // return res.status(403).json({ message: 'Phone number not registered.' });
         }
 
         // Generate a new OTP
@@ -91,10 +95,11 @@ exports.loginUser = async (req,res,next)=>{
         await sendOTP(phoneNumber, otp);
         await user.save();
 
-        res.status(200).json({ message: 'OTP sent successfully.' });
+        return HandleSuccess(res,200,'OTP sent successfully.',null)
+        // res.status(200).json({ message: 'OTP sent successfully.' });
     } catch (error) {
         console.error('Error resending OTP:', error);
-        res.status(500).json({ message: 'Failed to resend OTP.' });
+        return HandleError(res,500,"Failed to login.")
     }
 }
 
@@ -106,7 +111,8 @@ exports.resendOtp = async (req, res, next) => {
         // Find the user by phone number
         const user = await User.findOne({ phoneNumber });
         if (!user) {
-            return res.status(400).json({ message: 'Phone number not registered.' });
+            return HandleError(res,404,'Phone number not registered.')
+            // return res.status(400).json({ message: 'Phone number not registered.' });
         }
 
         // Generate a new OTP
@@ -119,11 +125,12 @@ exports.resendOtp = async (req, res, next) => {
         await user.save();
 
         // Send the new OTP via SMS
-
-        res.status(200).json({ message: 'New OTP sent successfully.' });
+        return HandleSuccess(res,200,'New OTP sent successfully.',null)
+        // res.status(200).json({ message: 'New OTP sent successfully.' });
     } catch (error) {
         console.error('Error resending OTP:', error);
-        res.status(500).json({ message: 'Failed to resend OTP.' });
+        return HandleError(res,500,'Failed to resend OTP')
+        // res.status(500).json({ message: 'Failed to resend OTP.' });
     }
 };
 
@@ -136,12 +143,14 @@ exports.verifyOtp = async (req, res, next) => {
         // Find the user by phone number
         const user = await User.findOne({ phoneNumber });
         if (!user) {
-            return res.status(404).json({ message: 'Phone number not registered.' });
+            return HandleError(res,404,'Phone number not registered.')
+            // return res.status(404).json({ message: 'Phone number not registered.' });
         }
 
         // Check if OTP is correct
         if (user.otp !== otp) {
-            return res.status(403).json({ message: 'Invalid OTP.' });
+            return HandleError(res,403,'Invalid OTP.')
+            // return res.status(403).json({ message: 'Invalid OTP.' });
         }
 
         // Check if OTP is expired
@@ -149,7 +158,8 @@ exports.verifyOtp = async (req, res, next) => {
         const otpValidityPeriod = 5 * 60 * 1000; // 5 minutes in milliseconds
         if (otpAge > otpValidityPeriod) {
             // OTP expired
-            return res.status(403).json({ message: 'OTP expired. Please request a new OTP.' });
+            return HandleError(res,403,'OTP expired. Please request a new OTP.')
+            // return res.status(403).json({ message: 'OTP expired. Please request a new OTP.' });
         }
 
         // OTP verification successful
@@ -162,10 +172,12 @@ exports.verifyOtp = async (req, res, next) => {
 
         const token = jwt.sign({ userId }, process.env.AUTH_SECRETE_KEY);
 
-        res.status(200).json({ message: 'OTP verification successful' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
+        return HandleSuccess(res,200,'OTP verification successful',{token,username : user.username,phNumber:user.phoneNumber,userId:user._id})
+        // res.status(200).json({ message: 'OTP verification successful' ,token,username : user.username,phNumber:user.phoneNumber,userId:user._id });
     } catch (error) {
         console.error('Error verifying OTP:', error);
-        res.status(500).json({ message: 'Failed to verify OTP.' });
+        return HandleError(res,500,"Failed to verify OTP.")
+        // res.status(500).json({ message: 'Failed to verify OTP.' });
     }
 };
 
@@ -182,20 +194,23 @@ exports.sendVerifyEmail = (req,res,next)=>{
     try {
         const result = sendEmail(email,"Verify your email",body)
         if(result){
-           return  res.status(200).json({
-                msg : "Email sent successfully"
-            })
+        //    return  res.status(200).json({
+        //         msg : "Email sent successfully"
+        //     })
+        return HandleSuccess(res,200,'Email sent successfully',null)
         }else{
-            return  res.status(500).json({
-                msg : "Something went wrong"
-            })
+            // return  res.status(500).json({
+            //     msg : "Something went wrong"
+            // })
+            return HandleError(res,500,'error in sending verification email')
         }
 
     } catch (error) {
         console.log("log from email sending",error);
-        return  res.status(500).json({
-            msg : "Something went wrong"
-        })
+        return HandleError(res,500,'Something went wrong')
+        // return  res.status(500).json({
+        //     msg : "Something went wrong"
+        // })
     }
 }
 
@@ -208,21 +223,23 @@ exports.verifyEmail = async (req,res,next)=>{
             user.email= userDetails.email
 
             await user.save()
-
-            return res.status(201).json({
-                msg : "Email verified successfully"
-            })
+            return HandleSuccess(res,201,"Email verified successfully",null)
+            // return res.status(201).json({
+            //     msg : "Email verified successfully"
+            // })
         }else{
-            return res.status(500).json({
-                msg : "Something went wrong"
-            })
+            return HandleError(res,500,"error in verifying in your email")
+            // return res.status(500).json({
+            //     msg : "Something went wrong"
+            // })
         }
     
     } catch (error) {
         console.log("error in verify email",error);
-        return res.status(500).json({
-            msg : "Something went wrong"
-        })
+        return HandleError(res,500,"Something went wrong")
+        // return res.status(500).json({
+        //     msg : "Something went wrong"
+        // })
     }
 
 }
@@ -253,23 +270,24 @@ exports.verifyAadhar = async (req,res,next)=>{
         if(response?.data.status===200 && response?.data?.data.code==='1001'){
             user.aadharNumber.number = aadharNumber
            await  user.save()
-            res.status(200).json({
-                msg :response?.data?.data.message,
-                transaction_id :response?.data?.data.transaction_id
-            })
-            return
+            // res.status(200).json({
+            //     msg :response?.data?.data.message,
+            //     transaction_id :response?.data?.data.transaction_id
+            // })
+            return HandleSuccess(res,200,response?.data?.data.message,{transaction_id :response?.data?.data.transaction_id})
         }else{
-            res.status(403).json({
-                msg : response?.error?.message
-            })
+            return HandleError(res,403,response?.error?.message)
+            // res.status(403).json({
+            //     msg : response?.error?.message
+            // })
         }
         
     } catch (error) {
         console.log("from adhar verify",error);
-        res.status(500).json({
-            msg:"something went wrong"     
-    })
-    return 
+    //     res.status(500).json({
+    //         msg:"something went wrong"     
+    // })
+    return HandleError(res,500,"Something went wrong")
     }
 }
 
@@ -280,10 +298,10 @@ exports.verifyAadharOtp = async (req,res,next)=>{
         const user = await User.findById(userId)
         console.log(user);
         if (!user) {
-            res.status(404).json({
-                msg  : "user not found"
-            })
-            return 
+            // res.status(404).json({
+            //     msg  : "user not found"
+            // })
+            return HandleError(res,404,"user not found")
         }
         const response = await axios.post(
             "https://api.gridlines.io/aadhaar-api/boson/submit-otp",
@@ -309,20 +327,23 @@ exports.verifyAadharOtp = async (req,res,next)=>{
             const aadharData = response?.data?.data.aadhaar_data 
             // console.log(response?.data?.data);
             if(calculateAge(aadharData?.date_of_birth)<18){
-                return res.json({
-                    statusCode : 401,
-                    msg :"minor"
-                })
+                // return res.json({
+                //     statusCode : 401,
+                //     msg :"minor"
+                // })
+                return HandleError(res,401,"minor")
             }else if(restricted_states.includes(aadharData?.state)){
-                return res.json({
-                    statusCode : 401,
-                    msg :"belongs to restricted_states"
-                })
+                // return res.json({
+                //     statusCode : 401,
+                //     msg :"belongs to restricted_states"
+                // })
+                return HandleError(res,401,"belongs to restricted_states")
             }else if(aadharData?.name?.toLowerCase()?.includes(user.username)){
-                return res.json({
-                    statusCode : 401,
-                    msg :"name doesn't matching"
-                })
+                // return res.json({
+                //     statusCode : 401,
+                //     msg :"name doesn't matching"
+                // })
+                return HandleError(es,401,"name doesn't matching with aadhaar")
             }
             else{
                 const requiredObj = {
@@ -346,25 +367,26 @@ exports.verifyAadharOtp = async (req,res,next)=>{
                 user.aadharNumber.details = requiredObj
                 
                 await user.save()
-
-                return res.json({
-                    statusCode : 200,
-                    msg :"your aadhar is verified"
-                })
+                return HandleSuccess(res,200,"your aadhar is verified",null)
+                // return res.json({
+                //     statusCode : 200,
+                //     msg :"your aadhar is verified"
+                // })
             }
         } else {
-            return res.json({
-                statusCode : 403,
-                msg :response?.error?.message
-            })
+            // return res.json({
+            //     statusCode : 403,
+            //     msg :response?.error?.message
+            // })
+            return HandleError(res,403,response?.error?.message)
         }
 
     } catch (error) {
         console.log("from aadhar otp verify",error.response.data.error);
-       return  res.status(500).json({
-            msg:"something went wrong"     
-    })
-   
+    //    return  res.status(500).json({
+    //         msg:"something went wrong"     
+    // })
+        return HandleError(res,500,"something went wrong")
     }
 }
 

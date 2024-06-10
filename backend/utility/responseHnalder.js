@@ -1,0 +1,13 @@
+exports.HandleSuccess=(res,status,message,data)=>{
+   res.send({
+    statusCode:status,
+    message:message,
+    data:data
+   })
+}
+exports.HandleError=(res,status,message)=>{
+   res.send({
+    statusCode:status,
+    message:message,
+   })
+}
